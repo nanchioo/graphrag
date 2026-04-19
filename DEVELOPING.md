@@ -15,6 +15,45 @@
 uv sync
 ```
 
+## Run The Admin API
+
+```shell
+uvicorn main:app --reload
+```
+
+If `uvicorn` is not available on `PATH` in Windows PowerShell, run:
+
+```powershell
+$env:PATH = "$PWD\.venv\Scripts;$env:PATH"
+uvicorn main:app --reload
+```
+
+This starts the FastAPI wrapper layer added at the repository root. Useful URLs:
+
+- `http://127.0.0.1:8000/` - API metadata
+- `http://127.0.0.1:8000/docs` - OpenAPI docs
+- `http://127.0.0.1:8000/console/` - built React admin console when `web/dist` exists
+
+## Run The React Frontend
+
+```shell
+cd web
+npm.cmd install
+npm.cmd run dev
+```
+
+The Vite dev server runs at `http://127.0.0.1:5173/console/` and proxies `/api/*` to the
+local FastAPI process.
+
+## Build The React Frontend
+
+```shell
+cd web
+npm.cmd run build
+```
+
+The bundle is emitted to `web/dist` and is automatically hosted by `main.py` under `/console/`.
+
 ## Execute the indexing engine
 ```shell
 uv run poe index <...args>

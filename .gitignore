@@ -58,6 +58,9 @@ docsite/
 # PyCharm
 .idea/
 
+# Frontend
+web/node_modules/
+
 # Jupyter notebook
 .ipynb_checkpoints/
 

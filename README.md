@@ -29,6 +29,68 @@ To learn more about GraphRAG and how it can be used to enhance your LLM's abilit
 
 To get started with the GraphRAG system we recommend trying the [command line quickstart](https://microsoft.github.io/graphrag/get_started/).
 
+## GraphRAG Admin Console
+
+This repository now also includes a minimal-intrusion FastAPI + React admin console for:
+
+- graph project management
+- source file upload
+- GraphRAG build orchestration
+- model profile configuration
+- graph preview
+- GraphRAG-backed question answering
+
+Detailed operator documentation is available in [graphrag-admin-console-guide.md](./graphrag-admin-console-guide.md).
+
+### Start The Backend
+
+```powershell
+uvicorn main:app --reload
+```
+
+If `uvicorn` is not available on `PATH` in Windows PowerShell, run:
+
+```powershell
+$env:PATH = "$PWD\.venv\Scripts;$env:PATH"
+uvicorn main:app --reload
+```
+
+Once the backend is running:
+
+- API root: `http://127.0.0.1:8000/`
+- OpenAPI docs: `http://127.0.0.1:8000/docs`
+- Admin console: `http://127.0.0.1:8000/console/`
+
+### Start The Frontend In Dev Mode
+
+```powershell
+cd web
+npm.cmd install
+npm.cmd run dev
+```
+
+The Vite dev server proxies `/api/*` requests to `http://127.0.0.1:8000`.
+Open `http://127.0.0.1:5173/console/` during frontend development.
+
+### Build The Frontend For FastAPI Hosting
+
+```powershell
+cd web
+npm.cmd run build
+```
+
+The production bundle is emitted to `web/dist`. When that directory exists, `main.py`
+automatically serves the frontend under `/console/`.
+
+### Minimal Acceptance Flow
+
+1. Open `/console/` and create a graph project.
+2. Add or select a model profile in the model configuration page.
+3. Upload text, markdown, json, csv, or pdf source files.
+4. Trigger a graph build from the graph management page.
+5. Refresh the graph detail panel and inspect graph preview / community reports.
+6. Open the query page and submit a question with `local`, `global`, `basic`, or `drift` mode.
+
 ## Repository Guidance
 
 This repository presents a methodology for using knowledge graph memory structures to enhance LLM outputs. Please note that the provided code serves as a demonstration and is not an officially supported Microsoft offering.

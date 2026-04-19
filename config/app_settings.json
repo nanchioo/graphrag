@@ -1,0 +1,19 @@
+{
+  "system": {
+    "projects_root": "data/projects",
+    "upload_root": "data/projects",
+    "default_model_profile_id": "8f39bfcf-426b-4fcc-b493-0a39bff679a5"
+  },
+  "model_profiles": [
+    {
+      "id": "8f39bfcf-426b-4fcc-b493-0a39bff679a5",
+      "provider": "openai",
+      "name": "通义千问",
+      "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      "api_key": "sk-10a9134787c741439acf399614f7659f",
+      "model_name": "qwen3.6-plus",
+      "embedding_model_name": "text-embedding-v3",
+      "api_version": ""
+    }
+  ]
+}
