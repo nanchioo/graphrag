@@ -3,38 +3,99 @@ import { useEffect, useState } from "react";
 import { useRepositories } from "../../app/providers/RepositoryProvider";
 import { QueryComposer } from "../../features/graph-query/QueryComposer";
 import { QueryResultPanel } from "../../features/graph-query/QueryResultPanel";
-import type { QueryMode, QueryResponsePayload } from "../../shared/types/api";
+import type {
+  GraphSummary,
+  QueryMode,
+  QueryResponsePayload,
+} from "../../shared/types/api";
+import { EmptyState } from "../../shared/ui/EmptyState";
 import { PageHeader } from "../../shared/ui/PageHeader";
 
 const availableModes = ["global", "local", "drift"] as const;
-const fallbackRecentQueries = [
-  "特斯拉与英伟达的关系是什么？",
-  "医疗文献中常见的副作用类型",
-  "Microsoft 近三年的主要收购",
-];
+
+const communityLevelOptions = [
+  { label: "0（叶子）", value: 0 },
+  { label: "1（社区）", value: 1 },
+  { label: "2（聚合）", value: 2 },
+] as const;
+
+const responseTypeOptions = [
+  { label: "multi-paragraph", value: "Multiple Paragraphs" },
+  { label: "bullet-list", value: "Bulleted List" },
+  { label: "precise", value: "Single Sentence" },
+] as const;
+
+const preferredGraphStorageKey = "graphrag:selected-graph";
 
 export function QueryWorkbenchPage() {
-  const { queryRepository } = useRepositories();
-  const [graphId] = useState("demo-001");
-  const [graphLabel] = useState("金融年报 2024 · v3");
+  const { graphRepository, queryRepository } = useRepositories();
+  const [graphOptions, setGraphOptions] = useState<GraphSummary[]>([]);
+  const [selectedGraphId, setSelectedGraphId] = useState("");
   const [mode, setMode] = useState<QueryMode>(availableModes[0]);
   const [question, setQuestion] = useState(
     "2024 年 AI 领域最重要的三个技术突破是什么？",
   );
   const [result, setResult] = useState<QueryResponsePayload | null>(null);
   const [isRunning, setIsRunning] = useState(false);
-  const [communityLevel, setCommunityLevel] = useState("0（叶子）");
-  const [responseType, setResponseType] = useState("multi-paragraph");
+  const [communityLevel, setCommunityLevel] = useState("2");
+  const [responseType, setResponseType] = useState("Multiple Paragraphs");
   const [maxContextTokens, setMaxContextTokens] = useState("12000");
   const [temperature, setTemperature] = useState("0.0");
   const [enableCitations, setEnableCitations] = useState(true);
   const [streamResponse, setStreamResponse] = useState(true);
 
+  useEffect(() => {
+    let alive = true;
+
+    void graphRepository.listGraphs().then((items) => {
+      if (!alive) {
+        return;
+      }
+
+      const preferredGraphId =
+        typeof window === "undefined"
+          ? null
+          : window.sessionStorage.getItem(preferredGraphStorageKey);
+      const nextSelectedGraphId =
+        preferredGraphId && items.some((item) => item.id === preferredGraphId)
+          ? preferredGraphId
+          : items[0]?.id || "";
+
+      setGraphOptions(items);
+      setSelectedGraphId((current) => {
+        if (current && items.some((item) => item.id === current)) {
+          return current;
+        }
+
+        return nextSelectedGraphId;
+      });
+
+      if (preferredGraphId && typeof window !== "undefined") {
+        window.sessionStorage.removeItem(preferredGraphStorageKey);
+      }
+    });
+
+    return () => {
+      alive = false;
+    };
+  }, [graphRepository]);
+
   async function handleRun(nextMode = mode) {
+    if (!selectedGraphId) {
+      return;
+    }
+
     setIsRunning(true);
 
     try {
-      const payload = await queryRepository.runSampleQuery(graphId, nextMode);
+      const payload = await queryRepository.runQuery({
+        graph_id: selectedGraphId,
+        question,
+        mode: nextMode,
+        community_level: Number(communityLevel),
+        response_type: responseType,
+        dynamic_community_selection: nextMode === "global",
+      });
       setResult(payload);
     } finally {
       setIsRunning(false);
@@ -46,8 +107,28 @@ export function QueryWorkbenchPage() {
   }
 
   useEffect(() => {
+    if (!selectedGraphId) {
+      setResult(null);
+      return;
+    }
+
     void handleRun("global");
-  }, []);
+  }, [selectedGraphId]);
+
+  if (graphOptions.length === 0) {
+    return (
+      <>
+        <PageHeader
+          title="查询测试台"
+          description="在发布到 Dify 之前，直接测试 GraphRAG 的三种检索模式。"
+        />
+        <EmptyState
+          title="暂无可查询图谱"
+          description="先到图谱管理页创建图谱、上传文件并完成构建，再回来运行查询。"
+        />
+      </>
+    );
+  }
 
   return (
     <>
@@ -58,12 +139,13 @@ export function QueryWorkbenchPage() {
       <section className="query-workbench-grid">
         <div className="query-main-stack">
           <QueryComposer
-            graphId={graphId}
-            graphLabel={graphLabel}
-            mode={mode}
+            graphOptions={graphOptions}
+            graphId={selectedGraphId}
+            mode={mode as "global" | "local" | "drift"}
             question={question}
-            recentQueries={result?.recent_queries ?? fallbackRecentQueries}
+            recentQueries={result?.recent_queries ?? []}
             isRunning={isRunning}
+            onGraphChange={setSelectedGraphId}
             onModeChange={handleModeChange}
             onQuestionChange={setQuestion}
             onRun={() => void handleRun()}
@@ -84,9 +166,11 @@ export function QueryWorkbenchPage() {
                 value={communityLevel}
                 onChange={(event) => setCommunityLevel(event.target.value)}
               >
-                <option>0（叶子）</option>
-                <option>1（社区）</option>
-                <option>2（聚合）</option>
+                {communityLevelOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
               </select>
             </label>
 
@@ -97,9 +181,11 @@ export function QueryWorkbenchPage() {
                 value={responseType}
                 onChange={(event) => setResponseType(event.target.value)}
               >
-                <option>multi-paragraph</option>
-                <option>bullet-list</option>
-                <option>precise</option>
+                {responseTypeOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
               </select>
             </label>
 
@@ -160,8 +246,13 @@ export function QueryWorkbenchPage() {
           <div className="query-settings-section">
             <h3>最近查询</h3>
             <div className="query-recent-list">
-              {(result?.recent_queries ?? fallbackRecentQueries).map((item) => (
-                <button key={item} type="button" className="query-recent-item">
+              {(result?.recent_queries ?? []).map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  className="query-recent-item"
+                  onClick={() => setQuestion(item)}
+                >
                   <span className="query-recent-icon">
                     <HistoryIcon />
                   </span>

@@ -74,6 +74,15 @@ def test_get_system_config_returns_defaults_and_initializes_store(
             "projects_root": "data/projects",
             "upload_root": "data/projects",
             "default_model_profile_id": None,
+            "llm_provider": None,
+            "llm_model": None,
+            "api_base": None,
+            "deployment": None,
+            "api_version": None,
+            "concurrency": None,
+            "rate_limit_per_minute": None,
+            "max_retries": None,
+            "enable_llm_cache": None,
         },
     }
     assert store_path.exists()
@@ -90,6 +99,15 @@ def test_update_system_config_persists_values(
             "projects_root": "data/custom-projects",
             "upload_root": "data/custom-uploads",
             "default_model_profile_id": "model-default",
+            "llm_provider": "Azure OpenAI",
+            "llm_model": "gpt-4.1",
+            "api_base": "https://example.openai.azure.com",
+            "deployment": "gpt-4-1106",
+            "api_version": "2024-02-15-preview",
+            "concurrency": 16,
+            "rate_limit_per_minute": 500,
+            "max_retries": 5,
+            "enable_llm_cache": True,
         },
     )
 
@@ -101,6 +119,15 @@ def test_update_system_config_persists_values(
             "projects_root": "data/custom-projects",
             "upload_root": "data/custom-uploads",
             "default_model_profile_id": "model-default",
+            "llm_provider": "Azure OpenAI",
+            "llm_model": "gpt-4.1",
+            "api_base": "https://example.openai.azure.com",
+            "deployment": "gpt-4-1106",
+            "api_version": "2024-02-15-preview",
+            "concurrency": 16,
+            "rate_limit_per_minute": 500,
+            "max_retries": 5,
+            "enable_llm_cache": True,
         },
     }
 
@@ -110,6 +137,15 @@ def test_update_system_config_persists_values(
         "projects_root": "data/custom-projects",
         "upload_root": "data/custom-uploads",
         "default_model_profile_id": "model-default",
+        "llm_provider": "Azure OpenAI",
+        "llm_model": "gpt-4.1",
+        "api_base": "https://example.openai.azure.com",
+        "deployment": "gpt-4-1106",
+        "api_version": "2024-02-15-preview",
+        "concurrency": 16,
+        "rate_limit_per_minute": 500,
+        "max_retries": 5,
+        "enable_llm_cache": True,
     }
 
 
@@ -127,6 +163,7 @@ def test_model_profile_crud_masks_api_key_and_tracks_default(
             "api_key": "sk-test-secret",
             "model_name": "gpt-4.1",
             "embedding_model_name": "text-embedding-3-large",
+            "deployment": "gpt-4.1-prod",
             "is_default": True,
         },
     )
@@ -145,6 +182,7 @@ def test_model_profile_crud_masks_api_key_and_tracks_default(
             "base_url": "https://api.openai.com/v1",
             "model_name": "gpt-4.1",
             "embedding_model_name": "text-embedding-3-large",
+            "deployment": "gpt-4.1-prod",
             "api_version": None,
             "is_default": True,
             "has_api_key": True,
@@ -166,6 +204,7 @@ def test_model_profile_crud_masks_api_key_and_tracks_default(
                     "base_url": "https://api.openai.com/v1",
                     "model_name": "gpt-4.1",
                     "embedding_model_name": "text-embedding-3-large",
+                    "deployment": "gpt-4.1-prod",
                     "api_version": None,
                     "is_default": True,
                     "has_api_key": True,
@@ -182,6 +221,7 @@ def test_model_profile_crud_masks_api_key_and_tracks_default(
             "name": "OpenAI Updated",
             "base_url": "https://example-proxy.local/v1",
             "model_name": "gpt-4.1-mini",
+            "deployment": "gpt-4.1-mini-staging",
         },
     )
 
@@ -196,6 +236,7 @@ def test_model_profile_crud_masks_api_key_and_tracks_default(
             "base_url": "https://example-proxy.local/v1",
             "model_name": "gpt-4.1-mini",
             "embedding_model_name": "text-embedding-3-large",
+            "deployment": "gpt-4.1-mini-staging",
             "api_version": None,
             "is_default": True,
             "has_api_key": True,
@@ -252,6 +293,7 @@ def test_create_model_profile_rejects_invalid_precheck(
             "api_key": "sk-kimi-test",
             "model_name": "kimi-k2.5",
             "embedding_model_name": "",
+            "deployment": "kimi-prod",
             "is_default": False,
         },
     )
@@ -285,6 +327,7 @@ def test_update_model_profile_rejects_invalid_precheck_without_persisting(
             "api_key": "sk-kimi-test",
             "model_name": "kimi-k2.5",
             "embedding_model_name": "text-embedding-v3",
+            "deployment": "kimi-prod",
             "is_default": False,
         },
     )
@@ -322,6 +365,7 @@ def test_update_model_profile_rejects_invalid_precheck_without_persisting(
                 "base_url": "https://api.moonshot.cn/v1",
                 "model_name": "kimi-k2.5",
                 "embedding_model_name": "text-embedding-v3",
+                "deployment": "kimi-prod",
                 "api_version": None,
                 "is_default": False,
                 "has_api_key": True,

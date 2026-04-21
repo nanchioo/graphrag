@@ -1,23 +1,24 @@
 import { useEffect, useState, type PropsWithChildren, type ReactNode } from "react";
 
+import { ModelProfilesPanel } from "../../features/model-profiles/ModelProfilesPanel";
 import { useRepositories } from "../../app/providers/RepositoryProvider";
 import type { SystemConfigPayload } from "../../shared/types/api";
 import { Button } from "../../shared/ui/Button";
 import { PageHeader } from "../../shared/ui/PageHeader";
 
-const fallbackConfig: SystemConfigPayload = {
-  projects_root: "D:/Software/Project/graphrag/data/projects",
-  upload_root: "D:/Software/Project/graphrag/data/uploads",
-  default_model_profile_id: "graphrag-prod",
-  llm_provider: "Azure OpenAI",
-  llm_model: "gpt-4.1",
-  api_base: "https://your.openai.azure.com",
-  deployment: "gpt-4-1106",
-  api_version: "2024-02-15-preview",
-  concurrency: 16,
-  rate_limit_per_minute: 500,
-  max_retries: 5,
-  enable_llm_cache: true,
+const initialConfig: SystemConfigPayload = {
+  projects_root: "",
+  upload_root: "",
+  default_model_profile_id: null,
+  llm_provider: "",
+  llm_model: "",
+  api_base: "",
+  deployment: "",
+  api_version: "",
+  concurrency: 1,
+  rate_limit_per_minute: 0,
+  max_retries: 0,
+  enable_llm_cache: false,
 };
 
 const settingsSections = [
@@ -48,15 +49,6 @@ const vectorStores = [
     vectors: "1.12M",
     status: "正常",
     tone: "success",
-    isDefault: false,
-  },
-  {
-    name: "legal-contracts",
-    engine: "Azure AI Search",
-    dimension: "3072",
-    vectors: "820K",
-    status: "配额告警",
-    tone: "pending",
     isDefault: false,
   },
 ] as const;
@@ -126,13 +118,6 @@ const apiKeys = [
     lastUsedAt: "2 分钟前",
   },
   {
-    name: "生产 · 内部微服务",
-    key: "sk_gra_live_c1d4••••••••",
-    scope: "read, query, write",
-    createdAt: "2024-09-20",
-    lastUsedAt: "1 小时前",
-  },
-  {
     name: "开发 · 本地测试",
     key: "sk_gra_dev_7b9e••••••••",
     scope: "read, query",
@@ -143,25 +128,18 @@ const apiKeys = [
 
 const webhookEndpoints = [
   {
-    url: "https://hooks.dify.your-company.com/ingest",
+    url: "https://hooks.example.com/graphrag",
     events: ["job.completed", "job.failed"],
     delivery: "2 分钟前 · 200",
     status: "健康",
     tone: "success",
   },
   {
-    url: "https://alerts.ops.your-company.com/graphrag",
-    events: ["job.failed", "quota.warning"],
+    url: "https://alerts.example.com/graphrag",
+    events: ["graph.updated", "quota.warning"],
     delivery: "1 小时前 · 200",
     status: "健康",
     tone: "success",
-  },
-  {
-    url: "https://legacy-erp.your-company.com/graphrag",
-    events: ["graph.updated"],
-    delivery: "5 小时前 · 500",
-    status: "失败",
-    tone: "failed",
   },
 ] as const;
 
@@ -175,28 +153,29 @@ const webhookEvents = [
 ] as const;
 
 const logEntries = [
-  ["14:32:08", "INFO", "[indexer]  Started job_8f2a1c on graph 金融年报 2024"],
-  ["14:32:11", "INFO", "[llm]      LLM request -> gpt-4.1 · prompt_tokens=1834"],
-  ["14:33:02", "WARN", "[llm]      Rate limit 429 · retry_after=12s · attempt 1/5"],
-  ["14:33:15", "INFO", "[llm]      Retry succeeded · prompt_tokens=1834 completion_tokens=612"],
-  ["14:41:55", "INFO", "[indexer]  Stage: EmbedChunks · 28/42 batches (66.7%)"],
-  ["14:52:03", "ERROR", "[indexer]  job_3b48ee failed: missing API key for provider openai"],
-  ["14:53:18", "INFO", "[query]    Local search · graph=金融年报 2024 · top_k=10 · 412ms"],
-  ["14:54:02", "INFO", "[webhook]  Delivered job.completed -> hooks.dify.your-company.com · 200"],
+  ["14:32:08", "INFO", "[indexer] Started job_8f2a1c on graph 金融年报 2024"],
+  ["14:33:15", "INFO", "[llm] Retry succeeded · prompt_tokens=1834 completion_tokens=612"],
+  ["14:41:55", "INFO", "[indexer] Stage: EmbedChunks · 28/42 batches"],
+  ["14:52:03", "ERROR", "[indexer] job_3b48ee failed: missing API key for provider openai"],
+  ["14:54:02", "INFO", "[webhook] Delivered job.completed · hooks.example.com · 200"],
 ] as const;
 
 export function SettingsPage() {
   const { settingsRepository } = useRepositories();
   const [config, setConfig] = useState<SystemConfigPayload | null>(null);
+  const [editableConfig, setEditableConfig] = useState<SystemConfigPayload>(initialConfig);
   const [activeSection, setActiveSection] = useState<SettingsSectionId>("llm");
 
   useEffect(() => {
     let alive = true;
 
     void settingsRepository.getSystemConfig().then((payload) => {
-      if (alive) {
-        setConfig(payload);
+      if (!alive) {
+        return;
       }
+
+      setConfig(payload);
+      setEditableConfig(payload);
     });
 
     return () => {
@@ -204,13 +183,29 @@ export function SettingsPage() {
     };
   }, [settingsRepository]);
 
-  const displayConfig = config ?? fallbackConfig;
+  const displayConfig = config ?? editableConfig ?? initialConfig;
+
+  function updateConfig<K extends keyof SystemConfigPayload>(
+    key: K,
+    value: SystemConfigPayload[K],
+  ) {
+    setEditableConfig((current) => ({
+      ...current,
+      [key]: value,
+    }));
+  }
+
+  async function handleSaveSystemConfig() {
+    const next = await settingsRepository.updateSystemConfig(editableConfig);
+    setConfig(next);
+    setEditableConfig(next);
+  }
 
   return (
     <div className="settings-workspace">
       <PageHeader
         title="系统设置"
-        description="集中管理默认模型、向量库、团队权限、API 凭据以及系统运行日志。"
+        description="集中管理默认模型、向量库、成员权限、API 凭据以及运行日志。"
       />
 
       <div className="settings-console-grid">
@@ -233,7 +228,13 @@ export function SettingsPage() {
         </aside>
 
         <div className="settings-main-stack">
-          {activeSection === "llm" ? <LlmSection config={displayConfig} /> : null}
+          {activeSection === "llm" ? (
+            <LiveLlmSection
+              config={displayConfig}
+              onConfigChange={updateConfig}
+              onSave={handleSaveSystemConfig}
+            />
+          ) : null}
           {activeSection === "vector" ? <VectorSection /> : null}
           {activeSection === "users" ? <UsersSection /> : null}
           {activeSection === "keys" ? <ApiKeysSection /> : null}
@@ -245,17 +246,28 @@ export function SettingsPage() {
   );
 }
 
-function LlmSection({ config }: { config: SystemConfigPayload }) {
+function LiveLlmSection({
+  config,
+  onConfigChange,
+  onSave,
+}: {
+  config: SystemConfigPayload;
+  onConfigChange: <K extends keyof SystemConfigPayload>(
+    key: K,
+    value: SystemConfigPayload[K],
+  ) => void;
+  onSave: () => void | Promise<void>;
+}) {
   return (
     <>
       <SettingsPanel
-        title="默认 LLM (用于实体抽取 & 社区摘要)"
+        title="默认 LLM"
         footer={
           <>
             <button type="button" className="settings-text-button">
               恢复默认
             </button>
-            <Button type="button" className="button-primary">
+            <Button type="button" className="button-primary" onClick={() => void onSave()}>
               保存
             </Button>
           </>
@@ -264,7 +276,11 @@ function LlmSection({ config }: { config: SystemConfigPayload }) {
         <div className="form-grid">
           <label className="settings-field">
             <span>Provider</span>
-            <select className="ui-input settings-select" defaultValue={config.llm_provider ?? "Azure OpenAI"}>
+            <select
+              className="ui-input settings-select"
+              value={config.llm_provider ?? "Azure OpenAI"}
+              onChange={(event) => onConfigChange("llm_provider", event.target.value)}
+            >
               <option>Azure OpenAI</option>
               <option>OpenAI</option>
               <option>Ollama</option>
@@ -272,7 +288,11 @@ function LlmSection({ config }: { config: SystemConfigPayload }) {
           </label>
           <label className="settings-field">
             <span>Model</span>
-            <select className="ui-input settings-select" defaultValue={config.llm_model ?? "gpt-4.1"}>
+            <select
+              className="ui-input settings-select"
+              value={config.llm_model ?? "gpt-4.1"}
+              onChange={(event) => onConfigChange("llm_model", event.target.value)}
+            >
               <option>gpt-4.1</option>
               <option>gpt-4o</option>
               <option>deepseek-chat</option>
@@ -283,16 +303,18 @@ function LlmSection({ config }: { config: SystemConfigPayload }) {
             <input
               type="text"
               className="ui-input"
-              defaultValue={config.api_base ?? "https://your.openai.azure.com"}
+              value={config.api_base ?? ""}
+              onChange={(event) => onConfigChange("api_base", event.target.value)}
             />
-            <small className="settings-field-help">Azure 需要完整 URL</small>
+            <small className="settings-field-help">Azure 需要填写完整的服务 URL</small>
           </label>
           <label className="settings-field">
             <span>Deployment</span>
             <input
               type="text"
               className="ui-input"
-              defaultValue={config.deployment ?? "gpt-4-1106"}
+              value={config.deployment ?? ""}
+              onChange={(event) => onConfigChange("deployment", event.target.value)}
             />
           </label>
           <label className="settings-field">
@@ -300,7 +322,8 @@ function LlmSection({ config }: { config: SystemConfigPayload }) {
             <input
               type="text"
               className="ui-input"
-              defaultValue={config.api_version ?? "2024-02-15-preview"}
+              value={config.api_version ?? ""}
+              onChange={(event) => onConfigChange("api_version", event.target.value)}
             />
           </label>
           <label className="settings-field">
@@ -308,15 +331,10 @@ function LlmSection({ config }: { config: SystemConfigPayload }) {
             <input
               type="number"
               className="ui-input"
-              defaultValue={config.concurrency ?? 16}
-            />
-          </label>
-          <label className="settings-field settings-field-span">
-            <span>API Key</span>
-            <input
-              type="password"
-              className="ui-input"
-              defaultValue="sk_live_7ae9d9e1b5f2134"
+              value={config.concurrency ?? 16}
+              onChange={(event) =>
+                onConfigChange("concurrency", Number(event.target.value))
+              }
             />
           </label>
         </div>
@@ -329,7 +347,10 @@ function LlmSection({ config }: { config: SystemConfigPayload }) {
             <input
               type="number"
               className="ui-input"
-              defaultValue={config.rate_limit_per_minute ?? 500}
+              value={config.rate_limit_per_minute ?? 500}
+              onChange={(event) =>
+                onConfigChange("rate_limit_per_minute", Number(event.target.value))
+              }
             />
           </label>
           <label className="settings-field">
@@ -337,7 +358,10 @@ function LlmSection({ config }: { config: SystemConfigPayload }) {
             <input
               type="number"
               className="ui-input"
-              defaultValue={config.max_retries ?? 5}
+              value={config.max_retries ?? 5}
+              onChange={(event) =>
+                onConfigChange("max_retries", Number(event.target.value))
+              }
             />
           </label>
         </div>
@@ -345,7 +369,7 @@ function LlmSection({ config }: { config: SystemConfigPayload }) {
         <div className="query-toggle-row settings-toggle-row">
           <div className="settings-toggle-copy">
             <strong>启用 LLM 缓存</strong>
-            <span>相同输入返回缓存结果，避免重复调用</span>
+            <span>相同输入返回缓存结果，减少重复调用并提升调试体验。</span>
           </div>
           <button
             type="button"
@@ -354,11 +378,16 @@ function LlmSection({ config }: { config: SystemConfigPayload }) {
                 ? "query-toggle-button query-toggle-button-on"
                 : "query-toggle-button"
             }
+            onClick={() =>
+              onConfigChange("enable_llm_cache", !config.enable_llm_cache)
+            }
           >
             <span className="query-toggle-thumb" />
           </button>
         </div>
       </SettingsPanel>
+
+      <ModelProfilesPanel />
     </>
   );
 }
@@ -384,7 +413,6 @@ function VectorSection() {
                 <th>向量数</th>
                 <th>状态</th>
                 <th>默认</th>
-                <th />
               </tr>
             </thead>
             <tbody>
@@ -402,24 +430,7 @@ function VectorSection() {
                       {store.status}
                     </span>
                   </td>
-                  <td>
-                    {store.isDefault ? (
-                      <span className="status-pill running">
-                        <span className="status-dot" />
-                        默认
-                      </span>
-                    ) : null}
-                  </td>
-                  <td>
-                    <div className="settings-action-group">
-                      <button type="button" className="settings-icon-button" aria-label="配置向量库">
-                        配
-                      </button>
-                      <button type="button" className="settings-icon-button" aria-label="删除向量库">
-                        删
-                      </button>
-                    </div>
-                  </td>
+                  <td>{store.isDefault ? "是" : "—"}</td>
                 </tr>
               ))}
             </tbody>
@@ -448,9 +459,8 @@ function VectorSection() {
             <input type="number" className="ui-input" defaultValue={64} />
           </label>
           <label className="settings-field">
-            <span>分片长度</span>
+            <span>上下文长度</span>
             <input type="number" className="ui-input" defaultValue={8192} />
-            <small className="settings-field-help">超过该长度将截断</small>
           </label>
         </div>
       </SettingsPanel>
@@ -464,12 +474,9 @@ function UsersSection() {
       <SettingsPanel
         title="成员 (5)"
         actions={
-          <div className="settings-toolbar">
-            <input type="search" className="ui-input settings-search-input" placeholder="搜索成员..." />
-            <Button type="button" className="button-primary">
-              + 邀请成员
-            </Button>
-          </div>
+          <Button type="button" className="button-primary">
+            + 邀请成员
+          </Button>
         }
       >
         <div className="graph-table-shell settings-user-table">
@@ -479,7 +486,6 @@ function UsersSection() {
                 <th>成员</th>
                 <th>角色</th>
                 <th>最近活跃</th>
-                <th />
               </tr>
             </thead>
             <tbody>
@@ -487,7 +493,9 @@ function UsersSection() {
                 <tr key={member.email}>
                   <td>
                     <div className="settings-user-member">
-                      <span className={`settings-user-avatar ${member.avatarTone}`}>{member.initials}</span>
+                      <span className={`settings-user-avatar ${member.avatarTone}`}>
+                        {member.initials}
+                      </span>
                       <div className="stack-xs">
                         <strong>{member.name}</strong>
                         <span className="table-secondary">{member.email}</span>
@@ -495,14 +503,11 @@ function UsersSection() {
                     </div>
                   </td>
                   <td>
-                    <span className={`settings-role-badge ${member.roleTone}`}>{member.role}</span>
+                    <span className={`settings-role-badge ${member.roleTone}`}>
+                      {member.role}
+                    </span>
                   </td>
                   <td>{member.activeAt}</td>
-                  <td>
-                    <button type="button" className="settings-icon-button" aria-label="成员更多操作">
-                      ...
-                    </button>
-                  </td>
                 </tr>
               ))}
             </tbody>
@@ -547,7 +552,7 @@ function ApiKeysSection() {
         <div className="settings-warning-icon">!</div>
         <div className="stack-xs">
           <strong>API Key 仅在创建时完整显示一次</strong>
-          <span>创建后仅可查看 Key 前缀，请妥善保管或重新生成。</span>
+          <span>创建后仅保留前缀用于识别，如需再次查看请重新生成。</span>
         </div>
       </section>
 
@@ -568,7 +573,6 @@ function ApiKeysSection() {
                 <th>权限</th>
                 <th>创建时间</th>
                 <th>最近使用</th>
-                <th />
               </tr>
             </thead>
             <tbody>
@@ -579,19 +583,6 @@ function ApiKeysSection() {
                   <td>{key.scope}</td>
                   <td>{key.createdAt}</td>
                   <td>{key.lastUsedAt}</td>
-                  <td>
-                    <div className="settings-action-group">
-                      <button type="button" className="settings-icon-button" aria-label="复制 Key">
-                        复
-                      </button>
-                      <button type="button" className="settings-icon-button" aria-label="轮换 Key">
-                        换
-                      </button>
-                      <button type="button" className="settings-icon-button" aria-label="删除 Key">
-                        删
-                      </button>
-                    </div>
-                  </td>
                 </tr>
               ))}
             </tbody>
@@ -621,7 +612,6 @@ function WebhookSection() {
                 <th>事件</th>
                 <th>最近投递</th>
                 <th>状态</th>
-                <th />
               </tr>
             </thead>
             <tbody>
@@ -643,19 +633,6 @@ function WebhookSection() {
                       <span className="status-dot" />
                       {item.status}
                     </span>
-                  </td>
-                  <td>
-                    <div className="settings-action-group">
-                      <button type="button" className="settings-icon-button" aria-label="测试 Webhook">
-                        测
-                      </button>
-                      <button type="button" className="settings-icon-button" aria-label="配置 Webhook">
-                        配
-                      </button>
-                      <button type="button" className="settings-icon-button" aria-label="删除 Webhook">
-                        删
-                      </button>
-                    </div>
                   </td>
                 </tr>
               ))}
@@ -684,26 +661,11 @@ function LogsSection() {
       title="日志"
       actions={
         <div className="settings-toolbar">
-          <select className="ui-input settings-select settings-toolbar-select" defaultValue="all-levels">
-            <option value="all-levels">全部级别</option>
-            <option value="info">INFO</option>
-            <option value="warn">WARN</option>
-            <option value="error">ERROR</option>
-          </select>
-          <select className="ui-input settings-select settings-toolbar-select" defaultValue="all-modules">
-            <option value="all-modules">全部模块</option>
-            <option value="indexer">indexer</option>
-            <option value="llm">llm</option>
-            <option value="webhook">webhook</option>
-          </select>
-          <select className="ui-input settings-select settings-toolbar-select" defaultValue="recent-hour">
+          <select className="ui-input settings-select" defaultValue="recent-hour">
             <option value="recent-hour">最近 1 小时</option>
             <option value="recent-day">最近 24 小时</option>
           </select>
-          <input type="search" className="ui-input settings-search-input" placeholder="搜索日志..." />
-          <button type="button" className="graph-header-button">
-            导出
-          </button>
+          <Button type="button">导出</Button>
         </div>
       }
     >

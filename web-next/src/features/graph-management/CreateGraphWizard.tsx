@@ -1,8 +1,12 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+
+import { useRepositories } from "../../app/providers/RepositoryProvider";
+import type { GraphCreateRequest, ModelProfileResponse } from "../../shared/types/api";
 
 type CreateGraphWizardProps = {
   open: boolean;
   onClose: () => void;
+  onCreateGraph: (payload: GraphCreateRequest) => Promise<void>;
 };
 
 type IndexMethod = "Standard" | "FastGraphRAG";
@@ -141,10 +145,16 @@ function sourceIcon(type: SourceType) {
   return <CloudIcon />;
 }
 
+function getDefaultProfileId(items: ModelProfileResponse[]) {
+  return items.find((item) => item.is_default)?.id ?? items[0]?.id ?? "";
+}
+
 export function CreateGraphWizard({
   open,
   onClose,
+  onCreateGraph,
 }: CreateGraphWizardProps) {
+  const { settingsRepository } = useRepositories();
   const [currentStep, setCurrentStep] = useState(0);
   const [graphName, setGraphName] = useState("金融年报 2024");
   const [description, setDescription] = useState("上市公司 A 股年报 2024 年度快照");
@@ -162,12 +172,20 @@ export function CreateGraphWizard({
     "EVENT",
     "CONCEPT",
   ]);
-  const [prompt, setPrompt] = useState("你是一个实体关系抽取器。请从以下文本中抽取……");
-  const [llmModel, setLlmModel] = useState("gpt-4.1");
-  const [embeddingModel, setEmbeddingModel] = useState("text-embedding-3-small");
+  const [prompt, setPrompt] = useState(
+    "你是一个实体关系抽取器。请从以下文本中抽取实体、关系和关键上下文。",
+  );
   const [vectorStore, setVectorStore] = useState("graphrag-prod");
   const [concurrency, setConcurrency] = useState(16);
   const [autoStart, setAutoStart] = useState(true);
+  const [modelProfiles, setModelProfiles] = useState<ModelProfileResponse[]>([]);
+  const [selectedModelProfileId, setSelectedModelProfileId] = useState("");
+  const [profileLoadError, setProfileLoadError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const selectedProfile =
+    modelProfiles.find((item) => item.id === selectedModelProfileId) ?? null;
 
   const canContinue = useMemo(() => {
     if (currentStep === 0) {
@@ -181,15 +199,76 @@ export function CreateGraphWizard({
     return true;
   }, [currentStep, graphName, sourcePath]);
 
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    let alive = true;
+
+    void settingsRepository.listModelProfiles().then(
+      (items) => {
+        if (!alive) {
+          return;
+        }
+
+        setModelProfiles(items);
+        setSelectedModelProfileId((current) => current || getDefaultProfileId(items));
+        setProfileLoadError(null);
+      },
+      (error) => {
+        if (!alive) {
+          return;
+        }
+
+        setModelProfiles([]);
+        setSelectedModelProfileId("");
+        setProfileLoadError(
+          error instanceof Error ? error.message : "模型档案加载失败。",
+        );
+      },
+    );
+
+    return () => {
+      alive = false;
+    };
+  }, [open, settingsRepository]);
+
   if (!open) {
     return null;
+  }
+
+  function resetWizard() {
+    setCurrentStep(0);
+    setGraphName("金融年报 2024");
+    setDescription("上市公司 A 股年报 2024 年度快照");
+    setIndexMethod("Standard");
+    setSourceType("本地文件");
+    setSourcePath("/data/inputs");
+    setFileType(".txt, .md, .pdf, .docx");
+    setChunkSize(1200);
+    setChunkOverlap(100);
+    setMaxGleanings(1);
+    setCommunityLevel("3（推荐）");
+    setSelectedEntities(["PERSON", "ORGANIZATION", "EVENT", "CONCEPT"]);
+    setPrompt("你是一个实体关系抽取器。请从以下文本中抽取实体、关系和关键上下文。");
+    setVectorStore("graphrag-prod");
+    setConcurrency(16);
+    setAutoStart(true);
+    setSubmitError(null);
+    setSelectedModelProfileId(getDefaultProfileId(modelProfiles));
+  }
+
+  function handleClose() {
+    resetWizard();
+    onClose();
   }
 
   function toggleEntityType(entityType: EntityType) {
     setSelectedEntities((current) =>
       current.includes(entityType)
         ? current.filter((item) => item !== entityType)
-        : [...current, entityType]
+        : [...current, entityType],
     );
   }
 
@@ -205,8 +284,22 @@ export function CreateGraphWizard({
     }
   }
 
-  function handleCreate() {
-    onClose();
+  async function handleCreate() {
+    setIsSubmitting(true);
+    setSubmitError(null);
+
+    try {
+      await onCreateGraph({
+        name: graphName.trim(),
+        description: description.trim() || null,
+        model_profile_id: selectedModelProfileId || null,
+      });
+      handleClose();
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : "图谱创建失败。");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -232,7 +325,7 @@ export function CreateGraphWizard({
             type="button"
             className="create-graph-close"
             aria-label="关闭新建知识图谱"
-            onClick={onClose}
+            onClick={handleClose}
           >
             <CloseIcon />
           </button>
@@ -271,7 +364,7 @@ export function CreateGraphWizard({
                   onChange={(event) => setGraphName(event.target.value)}
                   placeholder="例如：金融年报 2024"
                 />
-                <p className="wizard-field-help">2–40 字符，用于在列表和 API 中识别</p>
+                <p className="wizard-field-help">2-50 字符，用于在列表和 API 中识别</p>
               </div>
 
               <div className="wizard-field">
@@ -320,7 +413,7 @@ export function CreateGraphWizard({
                       <strong>FastGraphRAG</strong>
                       {indexMethod === "FastGraphRAG" ? <CheckIcon /> : null}
                     </div>
-                    <span>更快、Token 消耗更低，但首部聚合较弱</span>
+                    <span>更快、Token 消耗更低，但首轮聚合较弱</span>
                     <small>适合快速原型或冷启动</small>
                   </button>
                 </div>
@@ -366,7 +459,7 @@ export function CreateGraphWizard({
                 </div>
 
                 <div className="wizard-field">
-                  <label className="wizard-field-label">文件类型</label>
+                  <label className="wizard-field-label">数据源文件类型</label>
                   <select
                     className="wizard-select"
                     value={fileType}
@@ -412,7 +505,7 @@ export function CreateGraphWizard({
                     value={chunkSize}
                     onChange={(event) => setChunkSize(Number(event.target.value))}
                   />
-                  <p className="wizard-field-help">单位 Token，建议 800–1500</p>
+                  <p className="wizard-field-help">单位 Token，建议 800-1500</p>
                 </div>
 
                 <div className="wizard-field">
@@ -464,9 +557,7 @@ export function CreateGraphWizard({
                       <button
                         key={entityType}
                         type="button"
-                        className={
-                          active ? "entity-chip entity-chip-active" : "entity-chip"
-                        }
+                        className={active ? "entity-chip entity-chip-active" : "entity-chip"}
                         onClick={() => toggleEntityType(entityType)}
                       >
                         {active ? <CheckIcon /> : null}
@@ -496,33 +587,62 @@ export function CreateGraphWizard({
             <section className="wizard-step-panel">
               <div className="wizard-two-column">
                 <div className="wizard-field">
+                  <label className="wizard-field-label">模型档案</label>
+                  <select
+                    className="wizard-select"
+                    value={selectedModelProfileId}
+                    onChange={(event) => setSelectedModelProfileId(event.target.value)}
+                  >
+                    <option value="">使用系统默认</option>
+                    {modelProfiles.map((profile) => (
+                      <option key={profile.id} value={profile.id}>
+                        {profile.name}
+                      </option>
+                    ))}
+                  </select>
+                  {profileLoadError ? (
+                    <p className="wizard-field-help">{profileLoadError}</p>
+                  ) : (
+                    <p className="wizard-field-help">
+                      实际创建时会把所选模型档案写入后端图谱配置。
+                    </p>
+                  )}
+                </div>
+
+                <div className="wizard-field">
+                  <label className="wizard-field-label">并发数</label>
+                  <input
+                    className="ui-input wizard-input"
+                    type="number"
+                    value={concurrency}
+                    onChange={(event) => setConcurrency(Number(event.target.value))}
+                  />
+                </div>
+              </div>
+
+              <div className="wizard-two-column">
+                <div className="wizard-field">
                   <label className="wizard-field-label">
                     LLM 模型<span className="wizard-required">*</span>
                   </label>
-                  <select
-                    className="wizard-select"
-                    value={llmModel}
-                    onChange={(event) => setLlmModel(event.target.value)}
-                  >
-                    <option>gpt-4.1</option>
-                    <option>gpt-4o</option>
-                    <option>deepseek-chat</option>
-                  </select>
+                  <input
+                    className="ui-input wizard-input"
+                    value={selectedProfile?.model_name ?? "gpt-4.1"}
+                    readOnly
+                  />
                 </div>
 
                 <div className="wizard-field">
                   <label className="wizard-field-label">
                     Embedding 模型<span className="wizard-required">*</span>
                   </label>
-                  <select
-                    className="wizard-select"
-                    value={embeddingModel}
-                    onChange={(event) => setEmbeddingModel(event.target.value)}
-                  >
-                    <option>text-embedding-3-small</option>
-                    <option>text-embedding-3-large</option>
-                    <option>bge-m3</option>
-                  </select>
+                  <input
+                    className="ui-input wizard-input"
+                    value={
+                      selectedProfile?.embedding_model_name ?? "text-embedding-3-small"
+                    }
+                    readOnly
+                  />
                 </div>
               </div>
 
@@ -543,12 +663,11 @@ export function CreateGraphWizard({
                 </div>
 
                 <div className="wizard-field">
-                  <label className="wizard-field-label">并发数</label>
+                  <label className="wizard-field-label">部署</label>
                   <input
                     className="ui-input wizard-input"
-                    type="number"
-                    value={concurrency}
-                    onChange={(event) => setConcurrency(Number(event.target.value))}
+                    value={selectedProfile?.deployment ?? "default"}
+                    readOnly
                   />
                 </div>
               </div>
@@ -558,7 +677,7 @@ export function CreateGraphWizard({
                   <div>
                     <strong>创建后</strong>
                     <p>自动启动索引任务</p>
-                    <small>关闭则先创建空图谱，稍后手动触发</small>
+                    <small>当前版本会先创建图谱，上传文件后再从详情区触发构建。</small>
                   </div>
                   <button
                     type="button"
@@ -579,8 +698,8 @@ export function CreateGraphWizard({
                 <div className="wizard-summary-list">
                   <span>{graphName}</span>
                   <p>
-                    {indexMethod} · {selectedEntities.length} 种实体类型 · 使用 {llmModel} +{" "}
-                    {embeddingModel}
+                    {indexMethod} · {selectedEntities.length} 种实体类型 · 使用{" "}
+                    {selectedProfile?.model_name ?? "系统默认模型"}
                   </p>
                   <p>
                     {sourceType} · {sourcePath} · {vectorStore} · 并发 {concurrency}
@@ -592,10 +711,13 @@ export function CreateGraphWizard({
         </div>
 
         <footer className="create-graph-modal-footer">
-          <span className="wizard-step-count">步骤 {currentStep + 1} / 4</span>
+          <div className="stack-sm">
+            <span className="wizard-step-count">步骤 {currentStep + 1} / 4</span>
+            {submitError ? <span className="status-note failed">{submitError}</span> : null}
+          </div>
 
           <div className="wizard-footer-actions">
-            <button type="button" className="wizard-ghost-button" onClick={onClose}>
+            <button type="button" className="wizard-ghost-button" onClick={handleClose}>
               取消
             </button>
 
@@ -614,10 +736,15 @@ export function CreateGraphWizard({
                 disabled={!canContinue}
               >
                 <span>下一步</span>
-                <span>›</span>
+                <span>→</span>
               </button>
             ) : (
-              <button type="button" className="wizard-primary-button" onClick={handleCreate}>
+              <button
+                type="button"
+                className="wizard-primary-button"
+                onClick={() => void handleCreate()}
+                disabled={!canContinue || isSubmitting}
+              >
                 <CheckIcon />
                 <span>{autoStart ? "创建并启动索引" : "创建图谱"}</span>
               </button>

@@ -1,5 +1,6 @@
-export type QueryMode = "local" | "global" | "drift";
+export type QueryMode = "local" | "global" | "drift" | "basic";
 export type ModelProvider = "openai" | "azure" | "ollama";
+export type GraphBuildMethod = "standard" | "fast";
 
 export interface GraphSummary {
   id: string;
@@ -40,7 +41,12 @@ export interface GraphStatusPayload {
   graph_id: string;
   status: string;
   last_build_at?: string | null;
+  last_error?: string | null;
+  has_source_files?: boolean;
+  source_file_count?: number;
+  document_count?: number;
   has_artifacts: boolean;
+  artifact_paths?: string[];
   text_unit_count: number;
   progress_percent: number;
   progress_stage: string;
@@ -56,10 +62,36 @@ export interface ModelProfileResponse {
   name: string;
   base_url: string;
   model_name: string;
+  embedding_model_name?: string | null;
   is_default: boolean;
   has_api_key: boolean;
   deployment?: string;
   api_version?: string;
+}
+
+export interface ModelProfileCreateRequest {
+  provider: ModelProvider;
+  name: string;
+  base_url: string;
+  api_key?: string | null;
+  model_name: string;
+  embedding_model_name?: string | null;
+  deployment?: string | null;
+  api_version?: string | null;
+  is_default: boolean;
+}
+
+export interface ModelProfileUpdateRequest {
+  provider?: ModelProvider;
+  name?: string;
+  base_url?: string;
+  api_key?: string | null;
+  model_name?: string;
+  embedding_model_name?: string | null;
+  deployment?: string | null;
+  api_version?: string | null;
+  is_default?: boolean;
+  clear_api_key?: boolean;
 }
 
 export interface SystemConfigPayload {
@@ -80,7 +112,7 @@ export interface SystemConfigPayload {
 export interface QueryResponsePayload {
   graph_id: string;
   mode: QueryMode;
-  answer: string;
+  answer: string | Record<string, unknown> | Array<Record<string, unknown>>;
   context: Record<string, unknown>;
   latency_label?: string;
   token_count_label?: string;
@@ -89,4 +121,39 @@ export interface QueryResponsePayload {
   response_type?: string;
   execution_chain?: string[];
   recent_queries?: string[];
+}
+
+export interface QueryRequest {
+  graph_id: string;
+  question: string;
+  mode: QueryMode;
+  community_level?: number | null;
+  response_type?: string;
+  dynamic_community_selection?: boolean;
+}
+
+export interface GraphCreateRequest {
+  name: string;
+  description?: string | null;
+  model_profile_id?: string | null;
+}
+
+export interface GraphBuildRequest {
+  method: GraphBuildMethod;
+  force_rebuild: boolean;
+}
+
+export interface GraphBuildPayload {
+  graph_id: string;
+  status: string;
+  last_build_at?: string | null;
+  last_error?: string | null;
+}
+
+export interface SourceFileItem {
+  name: string;
+  relative_path: string;
+  extension: string;
+  size_bytes: number;
+  created_at: string;
 }

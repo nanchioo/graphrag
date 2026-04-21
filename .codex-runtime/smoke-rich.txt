@@ -1,0 +1,13 @@
+﻿OpenAI develops ChatGPT, GPT-4.1, and text embedding models.
+Microsoft invested billions of dollars in OpenAI and provides Azure OpenAI infrastructure.
+Sam Altman leads OpenAI. Satya Nadella leads Microsoft.
+Greg Brockman co-founded OpenAI. Ilya Sutskever co-founded OpenAI.
+OpenAI collaborates with Microsoft on Azure supercomputing and enterprise AI products.
+Azure OpenAI Service makes OpenAI models available to enterprise customers.
+Microsoft integrates OpenAI technology into Microsoft 365 Copilot, GitHub Copilot, and Bing.
+GitHub is owned by Microsoft. GitHub Copilot uses OpenAI models.
+ChatGPT competes with Claude and Gemini in the AI assistant market.
+Anthropic develops Claude. Google develops Gemini.
+OpenAI researchers publish work on alignment, reasoning, and multimodal models.
+Microsoft and OpenAI cooperate on cloud infrastructure, model serving, and enterprise deployments.
+Claude is built by Anthropic. Gemini is built by Google. ChatGPT is built by OpenAI.

@@ -14,6 +14,15 @@ class SystemConfigPayload(BaseModel):
     projects_root: str = "data/projects"
     upload_root: str = "data/projects"
     default_model_profile_id: str | None = None
+    llm_provider: str | None = None
+    llm_model: str | None = None
+    api_base: str | None = None
+    deployment: str | None = None
+    api_version: str | None = None
+    concurrency: int | None = None
+    rate_limit_per_minute: int | None = None
+    max_retries: int | None = None
+    enable_llm_cache: bool | None = None
 
 
 ModelProvider = Literal["openai", "azure", "ollama"]
@@ -28,6 +37,7 @@ class ModelProfileCreateRequest(BaseModel):
     api_key: str | None = None
     model_name: str
     embedding_model_name: str | None = None
+    deployment: str | None = None
     api_version: str | None = None
     is_default: bool = False
 
@@ -41,6 +51,7 @@ class ModelProfileUpdateRequest(BaseModel):
     api_key: str | None = None
     model_name: str | None = None
     embedding_model_name: str | None = None
+    deployment: str | None = None
     api_version: str | None = None
     is_default: bool | None = None
     clear_api_key: bool = False
@@ -55,6 +66,7 @@ class ModelProfileResponse(BaseModel):
     base_url: str
     model_name: str
     embedding_model_name: str | None = None
+    deployment: str | None = None
     api_version: str | None = None
     is_default: bool = False
     has_api_key: bool = False

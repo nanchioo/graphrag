@@ -34,6 +34,7 @@ class StoredModelProfile(BaseModel):
     api_key: str | None = None
     model_name: str
     embedding_model_name: str | None = None
+    deployment: str | None = None
     api_version: str | None = None
 
 
@@ -94,6 +95,7 @@ class AppConfigService:
             api_key=payload.api_key,
             model_name=payload.model_name,
             embedding_model_name=payload.embedding_model_name,
+            deployment=payload.deployment,
             api_version=payload.api_version,
         )
         store.model_profiles.append(profile)
@@ -122,6 +124,8 @@ class AppConfigService:
             profile.model_name = updates["model_name"]
         if "embedding_model_name" in updates:
             profile.embedding_model_name = updates["embedding_model_name"]
+        if "deployment" in updates:
+            profile.deployment = updates["deployment"]
         if "api_version" in updates:
             profile.api_version = updates["api_version"]
         if "api_key" in updates:
@@ -176,6 +180,7 @@ class AppConfigService:
             base_url=profile.base_url,
             model_name=profile.model_name,
             embedding_model_name=profile.embedding_model_name,
+            deployment=profile.deployment,
             api_version=profile.api_version,
             is_default=default_profile_id == profile.id,
             has_api_key=profile.api_key is not None,

@@ -1,0 +1,3 @@
+﻿GraphRAG smoke test document.
+OpenAI was founded by Sam Altman, Greg Brockman, Ilya Sutskever, Wojciech Zaremba, and John Schulman.
+Microsoft invested in OpenAI and provides Azure infrastructure.

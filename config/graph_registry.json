@@ -1,3 +1,15 @@
 {
-  "items": []
+  "items": [
+    {
+      "id": "codex-smoke-graph-rich-14371c0d",
+      "name": "Codex Smoke Graph Rich",
+      "description": "Rich document smoke test for build and query",
+      "root_dir": "D:\\Software\\Project\\graphrag\\data\\projects\\codex-smoke-graph-rich-14371c0d",
+      "status": "ready",
+      "model_profile_id": "8f39bfcf-426b-4fcc-b493-0a39bff679a5",
+      "created_at": "2026-04-21T07:43:00.785349+00:00",
+      "last_build_at": "2026-04-21T07:48:59.274824+00:00",
+      "last_error": null
+    }
+  ]
 }

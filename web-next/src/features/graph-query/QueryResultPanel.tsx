@@ -9,7 +9,35 @@ function readArrayField(value: Record<string, unknown>, key: string): string[] {
     return [];
   }
 
-  return entry.filter((item): item is string => typeof item === "string");
+  return entry.flatMap((item) => {
+    if (typeof item === "string") {
+      return [item];
+    }
+
+    if (item && typeof item === "object") {
+      const record = item as Record<string, unknown>;
+      const label =
+        record.title ??
+        record.name ??
+        record.label ??
+        record.id ??
+        record.text;
+
+      return typeof label === "string" ? [label] : [];
+    }
+
+    return [];
+  });
+}
+
+function formatAnswer(
+  answer: QueryResponsePayload["answer"],
+): string[] {
+  if (typeof answer === "string") {
+    return answer.split("\n\n").filter((item) => item.trim().length > 0);
+  }
+
+  return [JSON.stringify(answer, null, 2)];
 }
 
 type ResultTab = "context" | "communities" | "chain";
@@ -33,9 +61,13 @@ export function QueryResultPanel({
   }
 
   const communities = readArrayField(result.context, "communities");
-  const references = readArrayField(result.context, "references");
+  const references = [
+    ...readArrayField(result.context, "references"),
+    ...readArrayField(result.context, "sources"),
+    ...readArrayField(result.context, "entities"),
+  ];
   const executionChain = result.execution_chain ?? [];
-  const paragraphs = result.answer.split("\n\n");
+  const paragraphs = formatAnswer(result.answer);
 
   return (
     <section className="ui-card query-result-card">

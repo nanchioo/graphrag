@@ -1,11 +1,18 @@
 import { useState } from "react";
 
-import type { GraphSummary } from "../../shared/types/api";
+import type {
+  GraphCreateRequest,
+  GraphSummary,
+} from "../../shared/types/api";
+import { EmptyState } from "../../shared/ui/EmptyState";
 import { PageHeader } from "../../shared/ui/PageHeader";
 import { CreateGraphWizard } from "./CreateGraphWizard";
 
 type GraphListPanelProps = {
   graphs: GraphSummary[];
+  selectedGraphId: string | null;
+  onSelectGraph: (graphId: string) => void;
+  onCreateGraph: (payload: GraphCreateRequest) => Promise<void>;
 };
 
 type ViewMode = "list" | "grid";
@@ -102,6 +109,10 @@ function statusClassName(status: string) {
     return "running";
   }
 
+  if (status === "awaiting_upload" || status === "awaiting_build") {
+    return "pending";
+  }
+
   return "success";
 }
 
@@ -117,7 +128,12 @@ function formatCount(value?: number) {
   return (value ?? 0).toLocaleString("zh-CN");
 }
 
-export function GraphListPanel({ graphs }: GraphListPanelProps) {
+export function GraphListPanel({
+  graphs,
+  selectedGraphId,
+  onSelectGraph,
+  onCreateGraph,
+}: GraphListPanelProps) {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [methodFilter, setMethodFilter] = useState<MethodFilter>("all");
@@ -146,7 +162,12 @@ export function GraphListPanel({ graphs }: GraphListPanelProps) {
         />
 
         <div className="graph-page-actions">
-          <button type="button" className="graph-header-button">
+          <button
+            type="button"
+            className="graph-header-button"
+            onClick={() => selectedGraphId && onSelectGraph(selectedGraphId)}
+            disabled={!selectedGraphId}
+          >
             <ImportIcon />
             <span>导入</span>
           </button>
@@ -183,7 +204,7 @@ export function GraphListPanel({ graphs }: GraphListPanelProps) {
           >
             <option value="all">全部状态</option>
             <option value="ready">就绪</option>
-            <option value="building">索引中</option>
+            <option value="building">构建中</option>
             <option value="failed">失败</option>
           </select>
 
@@ -226,7 +247,12 @@ export function GraphListPanel({ graphs }: GraphListPanelProps) {
         </div>
       </div>
 
-      {viewMode === "list" ? (
+      {filteredGraphs.length === 0 ? (
+        <EmptyState
+          title="没有匹配的图谱"
+          description="调整筛选条件，或者先新建一个图谱开始上传和构建。"
+        />
+      ) : viewMode === "list" ? (
         <section className="graph-table-shell">
           <table className="graph-table">
             <thead>
@@ -242,159 +268,195 @@ export function GraphListPanel({ graphs }: GraphListPanelProps) {
               </tr>
             </thead>
             <tbody>
-              {filteredGraphs.map((graph, index) => (
-                <tr key={graph.id}>
-                  <td>
-                    <div className="graph-name-cell">
-                      <span className="graph-icon-tile">
-                        <GraphIcon />
-                      </span>
-                      <div className="graph-name-copy">
-                        <strong>{graph.name}</strong>
-                        <span>{graph.description ?? "暂无描述"}</span>
+              {filteredGraphs.map((graph, index) => {
+                const isSelected = graph.id === selectedGraphId;
+
+                return (
+                  <tr
+                    key={graph.id}
+                    className={isSelected ? "graph-table-row-selected" : undefined}
+                    onClick={() => onSelectGraph(graph.id)}
+                  >
+                    <td>
+                      <div className="graph-name-cell">
+                        <span className="graph-icon-tile">
+                          <GraphIcon />
+                        </span>
+                        <div className="graph-name-copy">
+                          <strong>{graph.name}</strong>
+                          <span>{graph.description ?? "暂无描述"}</span>
+                        </div>
                       </div>
-                    </div>
-                  </td>
-                  <td>
-                    <div className="graph-metric-cell">
-                      <strong>{formatCount(graph.entity_count)}</strong>
-                      <span>{formatCount(graph.relation_count)} 关系</span>
-                    </div>
-                  </td>
-                  <td>
-                    <div className="graph-metric-cell">
-                      <strong>{formatCount(graph.document_count)}</strong>
-                      <span>{graph.storage_size ?? "-"}</span>
-                    </div>
-                  </td>
-                  <td>
-                    <span
-                      className={`graph-method-badge ${methodClassName(graph.indexing_method)}`}
-                    >
-                      {graph.indexing_method ?? "-"}
-                    </span>
-                  </td>
-                  <td>
-                    <span
-                      className={`status-pill ${statusClassName(graph.status)} graph-status-pill`}
-                    >
-                      <span className="status-dot" />
-                      <span>{graph.status_label ?? graph.status}</span>
-                    </span>
-                  </td>
-                  <td>
-                    <div className="graph-owner-cell">
+                    </td>
+                    <td>
+                      <div className="graph-metric-cell">
+                        <strong>{formatCount(graph.entity_count)}</strong>
+                        <span>{formatCount(graph.relation_count)} 关系</span>
+                      </div>
+                    </td>
+                    <td>
+                      <div className="graph-metric-cell">
+                        <strong>{formatCount(graph.document_count)}</strong>
+                        <span>{graph.storage_size ?? "-"}</span>
+                      </div>
+                    </td>
+                    <td>
                       <span
-                        className={`graph-owner-avatar ${ownerToneClass(index)}`}
+                        className={`graph-method-badge ${methodClassName(graph.indexing_method)}`}
                       >
-                        {graph.owner_initials ?? "?"}
+                        {graph.indexing_method ?? "-"}
                       </span>
-                      <span>{graph.owner ?? "未分配"}</span>
-                    </div>
-                  </td>
-                  <td>{graph.updated_at ?? "-"}</td>
-                  <td>
-                    <div className="graph-row-actions">
-                      <button
-                        type="button"
-                        className="graph-action-button"
-                        aria-label={`查看 ${graph.name}`}
+                    </td>
+                    <td>
+                      <span
+                        className={`status-pill ${statusClassName(graph.status)} graph-status-pill`}
                       >
-                        <EyeIcon />
-                      </button>
-                      <button
-                        type="button"
-                        className="graph-action-button"
-                        aria-label={`配置 ${graph.name}`}
-                      >
-                        <SlidersIcon />
-                      </button>
-                      <button
-                        type="button"
-                        className="graph-action-button"
-                        aria-label={`更多 ${graph.name}`}
-                      >
-                        <MoreIcon />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                        <span className="status-dot" />
+                        <span>{graph.status_label ?? graph.status}</span>
+                      </span>
+                    </td>
+                    <td>
+                      <div className="graph-owner-cell">
+                        <span className={`graph-owner-avatar ${ownerToneClass(index)}`}>
+                          {graph.owner_initials ?? "?"}
+                        </span>
+                        <span>{graph.owner ?? "未分配"}</span>
+                      </div>
+                    </td>
+                    <td>{graph.updated_at ?? "-"}</td>
+                    <td>
+                      <div className="graph-row-actions">
+                        <button
+                          type="button"
+                          className="graph-action-button"
+                          aria-label={`查看 ${graph.name}`}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            onSelectGraph(graph.id);
+                          }}
+                        >
+                          <EyeIcon />
+                        </button>
+                        <button
+                          type="button"
+                          className="graph-action-button"
+                          aria-label={`配置 ${graph.name}`}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            onSelectGraph(graph.id);
+                          }}
+                        >
+                          <SlidersIcon />
+                        </button>
+                        <button
+                          type="button"
+                          className="graph-action-button"
+                          aria-label={`更多 ${graph.name}`}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            onSelectGraph(graph.id);
+                          }}
+                        >
+                          <MoreIcon />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </section>
       ) : (
         <section className="graph-grid-shell">
-          {filteredGraphs.map((graph, index) => (
-            <article key={graph.id} className="graph-grid-card">
-              <div className="graph-grid-card-header">
-                <span className="graph-icon-tile">
-                  <GraphIcon />
-                </span>
-                <div className="graph-name-copy">
-                  <strong>{graph.name}</strong>
-                  <span>{graph.description ?? "暂无描述"}</span>
-                </div>
-              </div>
+          {filteredGraphs.map((graph, index) => {
+            const isSelected = graph.id === selectedGraphId;
 
-              <div className="graph-grid-stats">
-                <div className="graph-metric-cell">
-                  <strong>{formatCount(graph.entity_count)}</strong>
-                  <span>{formatCount(graph.relation_count)} 关系</span>
-                </div>
-                <div className="graph-metric-cell">
-                  <strong>{formatCount(graph.document_count)}</strong>
-                  <span>{graph.storage_size ?? "-"}</span>
-                </div>
-              </div>
-
-              <div className="graph-grid-meta">
-                <span
-                  className={`graph-method-badge ${methodClassName(graph.indexing_method)}`}
-                >
-                  {graph.indexing_method ?? "-"}
-                </span>
-                <span
-                  className={`status-pill ${statusClassName(graph.status)} graph-status-pill`}
-                >
-                  <span className="status-dot" />
-                  <span>{graph.status_label ?? graph.status}</span>
-                </span>
-              </div>
-
-              <div className="graph-grid-footer">
-                <div className="graph-owner-cell">
-                  <span
-                    className={`graph-owner-avatar ${ownerToneClass(index)}`}
-                  >
-                    {graph.owner_initials ?? "?"}
+            return (
+              <article
+                key={graph.id}
+                className={
+                  isSelected ? "graph-grid-card graph-grid-card-selected" : "graph-grid-card"
+                }
+                onClick={() => onSelectGraph(graph.id)}
+              >
+                <div className="graph-grid-card-header">
+                  <span className="graph-icon-tile">
+                    <GraphIcon />
                   </span>
-                  <span>{graph.owner ?? "未分配"}</span>
+                  <div className="graph-name-copy">
+                    <strong>{graph.name}</strong>
+                    <span>{graph.description ?? "暂无描述"}</span>
+                  </div>
                 </div>
-                <div className="graph-row-actions">
-                  <button
-                    type="button"
-                    className="graph-action-button"
-                    aria-label={`查看 ${graph.name}`}
-                  >
-                    <EyeIcon />
-                  </button>
-                  <button
-                    type="button"
-                    className="graph-action-button"
-                    aria-label={`更多 ${graph.name}`}
-                  >
-                    <MoreIcon />
-                  </button>
+
+                <div className="graph-grid-stats">
+                  <div className="graph-metric-cell">
+                    <strong>{formatCount(graph.entity_count)}</strong>
+                    <span>{formatCount(graph.relation_count)} 关系</span>
+                  </div>
+                  <div className="graph-metric-cell">
+                    <strong>{formatCount(graph.document_count)}</strong>
+                    <span>{graph.storage_size ?? "-"}</span>
+                  </div>
                 </div>
-              </div>
-            </article>
-          ))}
+
+                <div className="graph-grid-meta">
+                  <span
+                    className={`graph-method-badge ${methodClassName(graph.indexing_method)}`}
+                  >
+                    {graph.indexing_method ?? "-"}
+                  </span>
+                  <span
+                    className={`status-pill ${statusClassName(graph.status)} graph-status-pill`}
+                  >
+                    <span className="status-dot" />
+                    <span>{graph.status_label ?? graph.status}</span>
+                  </span>
+                </div>
+
+                <div className="graph-grid-footer">
+                  <div className="graph-owner-cell">
+                    <span className={`graph-owner-avatar ${ownerToneClass(index)}`}>
+                      {graph.owner_initials ?? "?"}
+                    </span>
+                    <span>{graph.owner ?? "未分配"}</span>
+                  </div>
+                  <div className="graph-row-actions">
+                    <button
+                      type="button"
+                      className="graph-action-button"
+                      aria-label={`查看 ${graph.name}`}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onSelectGraph(graph.id);
+                      }}
+                    >
+                      <EyeIcon />
+                    </button>
+                    <button
+                      type="button"
+                      className="graph-action-button"
+                      aria-label={`更多 ${graph.name}`}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onSelectGraph(graph.id);
+                      }}
+                    >
+                      <MoreIcon />
+                    </button>
+                  </div>
+                </div>
+              </article>
+            );
+          })}
         </section>
       )}
 
       <div className="graph-page-footer">
-        <span>显示 {filteredGraphs.length} / {graphs.length} 条</span>
+        <span>
+          显示 {filteredGraphs.length} / {graphs.length} 条
+        </span>
         <div className="graph-pagination">
           <button type="button" className="graph-page-link">
             上一页
@@ -408,7 +470,11 @@ export function GraphListPanel({ graphs }: GraphListPanelProps) {
         </div>
       </div>
 
-      <CreateGraphWizard open={wizardOpen} onClose={() => setWizardOpen(false)} />
+      <CreateGraphWizard
+        open={wizardOpen}
+        onClose={() => setWizardOpen(false)}
+        onCreateGraph={onCreateGraph}
+      />
     </section>
   );
 }

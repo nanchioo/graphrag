@@ -1,12 +1,14 @@
+import type { GraphSummary } from "../../shared/types/api";
 import { Button } from "../../shared/ui/Button";
 
 type QueryComposerProps = {
+  graphOptions: GraphSummary[];
   graphId: string;
-  graphLabel: string;
   mode: "global" | "local" | "drift";
   question: string;
   recentQueries: string[];
   isRunning: boolean;
+  onGraphChange: (graphId: string) => void;
   onModeChange: (mode: "global" | "local" | "drift") => void;
   onQuestionChange: (question: string) => void;
   onRun: () => void;
@@ -28,12 +30,13 @@ const modeCopy = {
 } as const;
 
 export function QueryComposer({
+  graphOptions,
   graphId,
-  graphLabel,
   mode,
   question,
   recentQueries,
   isRunning,
+  onGraphChange,
   onModeChange,
   onQuestionChange,
   onRun,
@@ -61,8 +64,17 @@ export function QueryComposer({
       <div className="query-form-stack">
         <label className="query-field">
           <span className="query-field-label">图谱</span>
-          <select className="query-select" defaultValue={graphId} aria-label="图谱选择">
-            <option value={graphId}>{graphLabel}</option>
+          <select
+            className="query-select"
+            value={graphId}
+            aria-label="图谱选择"
+            onChange={(event) => onGraphChange(event.target.value)}
+          >
+            {graphOptions.map((graph) => (
+              <option key={graph.id} value={graph.id}>
+                {graph.name}
+              </option>
+            ))}
           </select>
         </label>
 

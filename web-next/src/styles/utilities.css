@@ -388,6 +388,10 @@
   cursor: pointer;
 }
 
+.graph-table-row-selected {
+  background: rgba(238, 244, 255, 0.92);
+}
+
 .graph-grid-shell {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -403,6 +407,11 @@
   border-radius: 18px;
   background: var(--bg-card);
   box-shadow: var(--shadow-1);
+}
+
+.graph-grid-card-selected {
+  border-color: rgba(21, 94, 239, 0.28);
+  box-shadow: var(--shadow-2);
 }
 
 .graph-grid-card-header,
@@ -448,6 +457,79 @@
   border-color: var(--border-subtle);
   background: var(--bg-card);
   color: var(--fg-primary);
+}
+
+.graph-detail-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.graph-detail-header,
+.graph-file-toolbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.graph-detail-actions,
+.graph-build-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.graph-build-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 160px;
+}
+
+.graph-build-field span {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.graph-build-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  color: var(--fg-secondary);
+}
+
+.graph-file-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.graph-file-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  border: 1px solid rgba(208, 213, 221, 0.48);
+  border-radius: 14px;
+  background: linear-gradient(180deg, #ffffff, #fafcff);
+}
+
+.graph-file-meta,
+.graph-file-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.graph-file-meta span,
+.graph-file-stats span,
+.graph-empty-copy {
+  color: var(--fg-secondary);
+  font-size: 13px;
 }
 
 .create-graph-modal-backdrop {
@@ -4195,6 +4277,8 @@
   .graph-page-header,
   .graph-toolbar,
   .graph-page-footer,
+  .graph-detail-header,
+  .graph-file-toolbar,
   .settings-panel-header,
   .settings-panel-footer,
   .dify-page-header,
