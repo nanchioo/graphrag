@@ -12,6 +12,13 @@ This work is not a general "make every screen live" effort. It is a focused
 integration pass that uses the backend capabilities already present in this repo
 as the primary constraint, then reshapes the frontend around those capabilities.
 
+Project configuration rule:
+
+- integration-related runtime configuration should live inside the current repo
+- prefer the existing repo-level `config/` directory for persisted config files
+- avoid depending on user-home, external workspace, or out-of-repo config files
+  for this main-flow integration
+
 ## Decision Summary
 
 The chosen direction is:
@@ -269,6 +276,8 @@ Allowed backend changes:
 - normalize status behavior where current frontend integration would otherwise be
   brittle
 - add small compatibility fields only if they are required for the main flow
+- keep persisted runtime configuration in the current project, reusing the
+  existing repo `config/` directory where practical
 
 Disallowed direction:
 
@@ -308,6 +317,12 @@ The intended live user journey after this integration is:
 7. open `Query Workbench`
 8. select the built graph
 9. run `global`, `local`, or `drift` queries
+
+Related configuration expectation:
+
+- the settings and graph-management flows should read and persist configuration
+  through files that live in this project, not through config stored outside the
+  repo
 
 This flow is the primary acceptance target for the work.
 
