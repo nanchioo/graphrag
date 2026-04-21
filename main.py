@@ -23,7 +23,9 @@ APP_NAME = "GraphRAG Admin API"
 APP_VERSION = "0.1.0"
 SERVICE_NAME = "graphrag-admin-api"
 WEB_DIST_DIR = Path("web/dist")
+WEB_NEXT_DIST_DIR = Path("web-next/dist")
 CONSOLE_PREFIX = "/console"
+CONSOLE_NEXT_PREFIX = "/console-next"
 
 logger = logging.getLogger(__name__)
 
@@ -58,29 +60,34 @@ def _resolve_console_target(web_dist_dir: Path, relative_path: str) -> Path | No
     return candidate
 
 
-def _configure_console_routes(app: FastAPI, web_dist_dir: Path) -> None:
-    index_file = web_dist_dir / "index.html"
+def _configure_spa_routes(
+    app: FastAPI,
+    dist_dir: Path,
+    prefix: str,
+    asset_mount_name: str,
+) -> None:
+    index_file = dist_dir / "index.html"
     if not index_file.exists():
         return
 
-    assets_dir = web_dist_dir / "assets"
+    assets_dir = dist_dir / "assets"
     if assets_dir.exists():
         app.mount(
-            f"{CONSOLE_PREFIX}/assets",
+            f"{prefix}/assets",
             StaticFiles(directory=assets_dir),
-            name="graphrag-web-assets",
+            name=asset_mount_name,
         )
 
-    @app.get(CONSOLE_PREFIX, include_in_schema=False)
-    @app.get(f"{CONSOLE_PREFIX}/", include_in_schema=False)
-    async def serve_console_index() -> FileResponse:
+    @app.get(prefix, include_in_schema=False)
+    @app.get(f"{prefix}/", include_in_schema=False)
+    async def serve_spa_index() -> FileResponse:
         """Serve the built web application shell."""
         return FileResponse(index_file)
 
-    @app.get(f"{CONSOLE_PREFIX}/{{relative_path:path}}", include_in_schema=False)
-    async def serve_console_app(relative_path: str) -> FileResponse:
+    @app.get(f"{prefix}/{{relative_path:path}}", include_in_schema=False)
+    async def serve_spa_app(relative_path: str) -> FileResponse:
         """Serve static files and fall back to the SPA shell for client routes."""
-        target = _resolve_console_target(web_dist_dir, relative_path)
+        target = _resolve_console_target(dist_dir, relative_path)
         if target and target.is_file():
             return FileResponse(target)
 
@@ -90,7 +97,10 @@ def _configure_console_routes(app: FastAPI, web_dist_dir: Path) -> None:
         return FileResponse(index_file)
 
 
-def create_app(web_dist_dir: Path | None = None) -> FastAPI:
+def create_app(
+    web_dist_dir: Path | None = None,
+    web_next_dist_dir: Path | None = None,
+) -> FastAPI:
     """Create the FastAPI application and optionally attach static web hosting."""
     app = FastAPI(
         title=APP_NAME,
@@ -124,7 +134,18 @@ def create_app(web_dist_dir: Path | None = None) -> FastAPI:
     for router in (graph_router, config_router, query_router):
         app.include_router(router)
 
-    _configure_console_routes(app, (web_dist_dir or WEB_DIST_DIR).resolve())
+    _configure_spa_routes(
+        app,
+        (web_dist_dir or WEB_DIST_DIR).resolve(),
+        CONSOLE_PREFIX,
+        "graphrag-web-assets",
+    )
+    _configure_spa_routes(
+        app,
+        (web_next_dist_dir or WEB_NEXT_DIST_DIR).resolve(),
+        CONSOLE_NEXT_PREFIX,
+        "graphrag-web-next-assets",
+    )
     return app
 
 
