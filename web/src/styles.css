@@ -1,10 +1,26 @@
 :root {
+  --analysis-bg: #eef2f6;
+  --analysis-bg-top: #f5f8fb;
+  --analysis-panel: rgba(255, 255, 255, 0.88);
+  --analysis-panel-strong: #ffffff;
+  --analysis-line: rgba(15, 23, 42, 0.09);
+  --analysis-line-strong: rgba(15, 23, 42, 0.16);
+  --analysis-text: #111827;
+  --analysis-text-soft: #617084;
+  --analysis-text-faint: #8a95a5;
+  --analysis-accent: #0f8ea8;
+  --analysis-accent-bright: #27c2d9;
+  --analysis-accent-soft: rgba(15, 142, 168, 0.12);
+  --analysis-accent-mid: rgba(15, 142, 168, 0.22);
+  --analysis-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.05),
+    0 20px 48px rgba(15, 23, 42, 0.08);
   font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
-  color: #18202a;
+  color: var(--analysis-text);
   background:
-    radial-gradient(circle at top left, rgba(202, 120, 73, 0.18), transparent 28%),
-    radial-gradient(circle at top right, rgba(27, 100, 95, 0.16), transparent 24%),
-    linear-gradient(180deg, #f6efe6 0%, #f4f6f8 42%, #eef2f5 100%);
+    radial-gradient(circle at top left, rgba(39, 194, 217, 0.08), transparent 24%),
+    radial-gradient(circle at top right, rgba(15, 142, 168, 0.07), transparent 28%),
+    linear-gradient(180deg, var(--analysis-bg-top) 0%, var(--analysis-bg) 100%);
   line-height: 1.5;
   font-weight: 400;
   color-scheme: light;
@@ -23,9 +39,15 @@ body,
 
 body {
   min-height: 100vh;
+  color: var(--analysis-text);
 }
 
 .app-shell {
+  min-height: 100vh;
+  background: transparent;
+}
+
+.analysis-shell {
   min-height: 100vh;
   background: transparent;
 }
@@ -40,9 +62,14 @@ body {
   gap: 24px;
   height: auto;
   padding: 20px 32px 18px;
-  border-bottom: 1px solid rgba(24, 32, 42, 0.08);
-  background: rgba(246, 239, 230, 0.88);
-  backdrop-filter: blur(18px);
+  border-bottom: 1px solid var(--analysis-line);
+  background: rgba(245, 248, 251, 0.88);
+  backdrop-filter: blur(20px);
+}
+
+.analysis-header {
+  border-bottom-color: var(--analysis-line);
+  background: rgba(245, 248, 251, 0.88);
 }
 
 .brand-block {
@@ -51,18 +78,27 @@ body {
   gap: 2px;
 }
 
+.analysis-brand {
+  gap: 4px;
+}
+
 .brand-kicker {
   font-family: "Source Serif 4", Georgia, serif;
   font-size: 12px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: #8a5232;
+  color: var(--analysis-text-faint);
+}
+
+.analysis-kicker {
+  color: var(--analysis-accent);
+  letter-spacing: 0.12em;
 }
 
 .brand-title.ant-typography {
   margin: 0;
   font-family: "Source Serif 4", Georgia, serif;
-  color: #162028;
+  color: var(--analysis-text);
 }
 
 .nav-menu.ant-menu {
@@ -72,6 +108,23 @@ body {
   background: transparent;
   border-bottom: none;
   font-weight: 600;
+}
+
+.analysis-nav-menu.ant-menu {
+  color: var(--analysis-text-soft);
+}
+
+.analysis-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border: 1px solid var(--analysis-line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.76);
+  color: var(--analysis-text-soft);
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .app-content {
@@ -151,22 +204,22 @@ body {
 .page-section,
 .surface-card.ant-card,
 .surface-panel {
-  border: 1px solid rgba(24, 32, 42, 0.08);
+  border: 1px solid var(--analysis-line);
   border-radius: 24px;
-  background: rgba(255, 255, 255, 0.85);
-  box-shadow: 0 16px 36px rgba(23, 36, 49, 0.08);
+  background: var(--analysis-panel);
+  box-shadow: var(--analysis-shadow);
 }
 
 .surface-card .ant-card-head {
-  border-bottom-color: rgba(24, 32, 42, 0.08);
+  border-bottom-color: var(--analysis-line);
 }
 
 .muted-text {
-  color: #5d6774;
+  color: var(--analysis-text-soft);
 }
 
 .selected-row td {
-  background: rgba(27, 100, 95, 0.08) !important;
+  background: var(--analysis-accent-soft) !important;
 }
 
 .status-actions,
@@ -212,6 +265,95 @@ body {
   font-size: 12px;
 }
 
+.graph-create-modal.ant-modal {
+  max-width: calc(100vw - 32px);
+}
+
+.graph-create-modal .ant-modal-content {
+  overflow: hidden;
+  border: 1px solid rgba(24, 32, 42, 0.08);
+  border-radius: 28px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(247, 242, 236, 0.88));
+  box-shadow: 0 24px 56px rgba(23, 36, 49, 0.16);
+}
+
+.graph-create-modal .ant-modal-header {
+  background: transparent;
+}
+
+.graph-create-modal .ant-modal-body {
+  max-height: calc(100vh - 180px);
+  overflow-y: auto;
+  padding-top: 20px;
+}
+
+.graph-create-form {
+  margin-top: 4px;
+}
+
+.graph-create-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.graph-create-section {
+  padding: 20px;
+  border: 1px solid rgba(24, 32, 42, 0.08);
+  border-radius: 22px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(250, 246, 241, 0.82));
+}
+
+.graph-create-section-header {
+  margin-bottom: 16px;
+}
+
+.graph-create-section-kicker {
+  display: inline-block;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8a5232;
+}
+
+.graph-create-section-note.ant-typography {
+  margin: 6px 0 0;
+  font-size: 13px;
+}
+
+.graph-create-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  column-gap: 16px;
+}
+
+.graph-create-grid .ant-form-item {
+  margin-bottom: 16px;
+}
+
+.graph-create-grid .ant-form-item:last-child,
+.graph-create-grid .graph-create-field-span-full:last-child {
+  margin-bottom: 0;
+}
+
+.graph-create-field-span-full {
+  grid-column: 1 / -1;
+}
+
+.graph-create-modal .ant-input,
+.graph-create-modal .ant-input-number,
+.graph-create-modal .ant-select-selector {
+  border-radius: 12px;
+}
+
+.graph-create-modal .ant-input-number {
+  width: 100%;
+}
+
 @media (max-width: 1100px) {
   .app-header {
     align-items: start;
@@ -238,5 +380,31 @@ body {
   .page-hero {
     flex-direction: column;
     padding: 20px;
+  }
+
+  .graph-create-modal.ant-modal {
+    max-width: calc(100vw - 16px);
+  }
+
+  .graph-create-modal .ant-modal-body {
+    max-height: calc(100vh - 120px);
+    padding-top: 16px;
+  }
+
+  .graph-create-layout {
+    gap: 14px;
+  }
+
+  .graph-create-section {
+    padding: 16px;
+    border-radius: 18px;
+  }
+
+  .graph-create-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .graph-create-field-span-full {
+    grid-column: auto;
   }
 }

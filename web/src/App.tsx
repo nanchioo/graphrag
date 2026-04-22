@@ -26,10 +26,10 @@ function AppShell() {
     "/graphs";
 
   return (
-    <Layout className="app-shell">
-      <Layout.Header className="app-header">
-        <div className="brand-block">
-          <Typography.Text className="brand-kicker">GraphRAG Workbench</Typography.Text>
+    <Layout className="app-shell analysis-shell">
+      <Layout.Header className="app-header analysis-header">
+        <div className="brand-block analysis-brand">
+          <Typography.Text className="brand-kicker analysis-kicker">GraphRAG Workbench</Typography.Text>
           <Typography.Title level={2} className="brand-title">
             知识图谱管理后台
           </Typography.Title>
@@ -38,7 +38,7 @@ function AppShell() {
           mode="horizontal"
           selectedKeys={[selectedKey]}
           items={navigationItems}
-          className="nav-menu"
+          className="nav-menu analysis-nav-menu"
           onClick={({ key }) => navigate(key)}
         />
       </Layout.Header>

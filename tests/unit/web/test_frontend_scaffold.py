@@ -157,6 +157,24 @@ def test_web_app_uses_console_router_basename():
     assert "basename={import.meta.env.BASE_URL}" in app_source
 
 
+def test_app_shell_uses_graph_analysis_console_visual_language():
+    app_source = Path("web/src/App.tsx").read_text(encoding="utf-8")
+    styles_source = Path("web/src/styles.css").read_text(encoding="utf-8")
+
+    assert 'className="app-shell analysis-shell"' in app_source
+    assert 'className="app-header analysis-header"' in app_source
+    assert 'className="brand-block analysis-brand"' in app_source
+    assert 'className="nav-menu analysis-nav-menu"' in app_source
+    assert "--analysis-bg: #eef2f6;" in styles_source
+    assert "--analysis-accent: #0f8ea8;" in styles_source
+    assert ".analysis-shell {" in styles_source
+    assert ".analysis-header {" in styles_source
+    assert ".analysis-brand {" in styles_source
+    assert ".analysis-kicker {" in styles_source
+    assert ".analysis-chip {" in styles_source
+    assert "rgba(202, 120, 73, 0.18)" not in styles_source
+
+
 def test_model_profile_form_contains_platform_presets():
     form_source = Path("web/src/components/ModelProfileForm.tsx").read_text(
         encoding="utf-8"
@@ -258,6 +276,47 @@ def test_graph_manage_page_exposes_chunking_fields_in_create_modal():
     assert "1200" in page_source
     assert "100" in page_source
     assert "Chunk overlap must be smaller than chunk size." in page_source
+
+
+def test_graph_manage_page_prefills_per_graph_projects_root_from_system_config():
+    page_source = Path("web/src/pages/GraphManagePage.tsx").read_text(encoding="utf-8")
+    types_source = Path("web/src/types/index.ts").read_text(encoding="utf-8")
+
+    assert "projects_root?: string;" in types_source
+    assert "getSystemConfig" in page_source
+    assert 'const DEFAULT_PROJECTS_ROOT = "data/projects";' in page_source
+    assert "const [systemConfig, setSystemConfig]" in page_source
+    assert "projects_root: systemConfig?.projects_root ?? DEFAULT_PROJECTS_ROOT" in page_source
+    assert 'label="保存位置"' in page_source
+    assert 'name="projects_root"' in page_source
+    assert "最终目录将自动生成为 <保存位置>/<图谱ID>" in page_source
+
+
+def test_model_config_page_describes_projects_root_as_default_graph_save_location():
+    page_source = Path("web/src/pages/ModelConfigPage.tsx").read_text(encoding="utf-8")
+
+    assert "默认图谱保存位置" in page_source
+    assert "新建图谱时会默认使用这里，也可以按图谱单独修改。" in page_source
+
+
+def test_graph_manage_page_uses_responsive_sectioned_create_modal_layout():
+    page_source = Path("web/src/pages/GraphManagePage.tsx").read_text(encoding="utf-8")
+    styles_source = Path("web/src/styles.css").read_text(encoding="utf-8")
+
+    assert 'width={920}' in page_source
+    assert 'className="graph-create-modal"' in page_source
+    assert 'className="graph-create-form"' in page_source
+    assert 'className="graph-create-layout"' in page_source
+    assert 'className="graph-create-section"' in page_source
+    assert 'className="graph-create-grid"' in page_source
+    assert "基础信息" in page_source
+    assert "切片配置" in page_source
+    assert ".graph-create-modal .ant-modal-body {" in styles_source
+    assert ".graph-create-layout {" in styles_source
+    assert ".graph-create-grid {" in styles_source
+    assert ".graph-create-section {" in styles_source
+    assert "@media (max-width: 720px) {" in styles_source
+    assert "graph-create-layout" in styles_source
 
 
 def test_graph_manage_page_keeps_build_polling_non_blocking():
