@@ -304,9 +304,9 @@ def test_graph_manage_page_uses_responsive_sectioned_create_modal_layout():
     styles_source = Path("web/src/styles.css").read_text(encoding="utf-8")
 
     assert 'width={920}' in page_source
-    assert 'className="graph-create-modal"' in page_source
+    assert 'className="graph-create-modal analysis-modal"' in page_source
     assert 'className="graph-create-form"' in page_source
-    assert 'className="graph-create-layout"' in page_source
+    assert 'className="graph-create-layout analysis-form-grid"' in page_source
     assert 'className="graph-create-section"' in page_source
     assert 'className="graph-create-grid"' in page_source
     assert "基础信息" in page_source
@@ -317,6 +317,25 @@ def test_graph_manage_page_uses_responsive_sectioned_create_modal_layout():
     assert ".graph-create-section {" in styles_source
     assert "@media (max-width: 720px) {" in styles_source
     assert "graph-create-layout" in styles_source
+
+
+def test_graph_manage_page_uses_analysis_console_page_and_modal_classes():
+    page_source = Path("web/src/pages/GraphManagePage.tsx").read_text(encoding="utf-8")
+    styles_source = Path("web/src/styles.css").read_text(encoding="utf-8")
+
+    assert 'className="page-stack analysis-page analysis-page--graphs"' in page_source
+    assert 'className="page-hero analysis-hero"' in page_source
+    assert 'className="analysis-hero-meta"' in page_source
+    assert 'className="surface-card analysis-card analysis-card--spotlight"' in page_source
+    assert 'className="graph-create-modal analysis-modal"' in page_source
+    assert 'className="graph-create-layout analysis-form-grid"' in page_source
+    assert ".analysis-page--graphs {" in styles_source
+    assert ".analysis-hero {" in styles_source
+    assert ".analysis-hero-meta {" in styles_source
+    assert ".analysis-card {" in styles_source
+    assert ".analysis-card--spotlight {" in styles_source
+    assert ".analysis-modal .ant-modal-content {" in styles_source
+    assert ".analysis-form-grid {" in styles_source
 
 
 def test_graph_manage_page_keeps_build_polling_non_blocking():

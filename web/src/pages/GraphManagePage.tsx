@@ -2,7 +2,6 @@ import {
   Button,
   Card,
   Descriptions,
-  Divider,
   Empty,
   Form,
   Input,
@@ -29,6 +28,7 @@ import {
   getGraphPreview,
   getGraphReports,
   getGraphs,
+  getSystemConfig,
   getGraphStatus,
   getGraphTextUnits,
   listModelProfiles,
@@ -46,6 +46,7 @@ import type {
   GraphReportsPayload,
   GraphStatusPayload,
   GraphSummary,
+  SystemConfigPayload,
   GraphTextUnitItem,
   GraphTextUnitListPayload,
   ModelProfileResponse,
@@ -63,10 +64,13 @@ const DEFAULT_CHUNKING_CONFIG = {
   encoding_model: "o200k_base",
 };
 
+const DEFAULT_PROJECTS_ROOT = "data/projects";
+
 export function GraphManagePage() {
   const [messageApi, contextHolder] = message.useMessage();
   const [graphs, setGraphs] = useState<GraphSummary[]>([]);
   const [profiles, setProfiles] = useState<ModelProfileResponse[]>([]);
+  const [systemConfig, setSystemConfig] = useState<SystemConfigPayload | null>(null);
   const [selectedGraphId, setSelectedGraphId] = useState<string>();
   const [graphDetail, setGraphDetail] = useState<GraphDetailPayload | null>(null);
   const [graphStatus, setGraphStatus] = useState<GraphStatusPayload | null>(null);
@@ -118,6 +122,7 @@ export function GraphManagePage() {
   function openCreateModal() {
     createForm.resetFields();
     createForm.setFieldsValue({
+      projects_root: systemConfig?.projects_root ?? DEFAULT_PROJECTS_ROOT,
       chunking: DEFAULT_CHUNKING_CONFIG,
     });
     setCreateOpen(true);
@@ -152,6 +157,15 @@ export function GraphManagePage() {
       setProfiles(payload.items);
     } catch (error) {
       messageApi.error(error instanceof Error ? error.message : "模型列表加载失败");
+    }
+  }
+
+  async function loadSystemConfig() {
+    try {
+      const payload = await getSystemConfig();
+      setSystemConfig(payload);
+    } catch (error) {
+      messageApi.error(error instanceof Error ? error.message : "系统配置加载失败");
     }
   }
 
@@ -463,6 +477,7 @@ export function GraphManagePage() {
   useEffect(() => {
     void loadGraphs();
     void loadProfiles();
+    void loadSystemConfig();
   }, []);
 
   useEffect(() => {
@@ -495,14 +510,18 @@ export function GraphManagePage() {
   }, [graphStatus?.status, selectedGraphId]);
 
   return (
-    <div className="page-stack">
+    <div className="page-stack analysis-page analysis-page--graphs">
       {contextHolder}
-      <div className="page-hero">
+      <div className="page-hero analysis-hero">
         <div>
           <Typography.Title level={3}>图谱管理</Typography.Title>
           <Typography.Paragraph className="muted-text">
             创建图谱项目，上传源文件，触发 GraphRAG 构建，并查看节点关系、社区报告和文本切片。
           </Typography.Paragraph>
+        </div>
+        <div className="analysis-hero-meta">
+          <span className="analysis-chip">Knowledge Graph</span>
+          <span className="analysis-chip analysis-chip--accent">Analysis Station</span>
         </div>
       </div>
 
@@ -537,7 +556,10 @@ export function GraphManagePage() {
           <Spin spinning={detailLoading}>
           {graphDetail ? (
             <div className="page-stack">
-              <Card className="surface-card" title={graphDetail.name}>
+              <Card
+                className="surface-card analysis-card analysis-card--spotlight"
+                title={graphDetail.name}
+              >
                 <Descriptions column={1} size="small">
                   <Descriptions.Item label="图谱 ID">{graphDetail.id}</Descriptions.Item>
                   <Descriptions.Item label="描述">
@@ -645,6 +667,8 @@ export function GraphManagePage() {
       <Modal
         open={createOpen}
         title="新建图谱"
+        width={920}
+        className="graph-create-modal analysis-modal"
         okText="创建"
         cancelText="取消"
         confirmLoading={createLoading}
@@ -655,28 +679,13 @@ export function GraphManagePage() {
         <Form
           form={createForm}
           layout="vertical"
+          className="graph-create-form"
           initialValues={{
+            projects_root: DEFAULT_PROJECTS_ROOT,
             chunking: DEFAULT_CHUNKING_CONFIG,
           }}
           onFinish={(values) => void handleCreateGraph(values)}
         >
-          <Form.Item<GraphCreateRequest> label="名称" name="name" rules={[{ required: true }]}>
-            <Input placeholder="例如: customer-service-kg" />
-          </Form.Item>
-          <Form.Item<GraphCreateRequest> label="描述" name="description">
-            <Input.TextArea rows={3} placeholder="可选描述" />
-          </Form.Item>
-          <Form.Item<GraphCreateRequest> label="绑定模型配置" name="model_profile_id">
-            <Select
-              allowClear
-              placeholder="不选则使用默认模型配置"
-              options={profiles.map((profile) => ({
-                label: `${profile.name} (${profile.provider})`,
-                value: profile.id,
-              }))}
-            />
-          </Form.Item>
-          <Divider>切片配置</Divider>
           <Form.Item<GraphCreateRequest>
             name={["chunking", "type"]}
             initialValue={DEFAULT_CHUNKING_CONFIG.type}
@@ -684,59 +693,113 @@ export function GraphManagePage() {
           >
             <Input />
           </Form.Item>
-          <Form.Item<GraphCreateRequest>
-            label="切片方式"
-          >
-            <Space direction="vertical" size={4} style={{ width: "100%" }}>
-              <Input value={DEFAULT_CHUNKING_CONFIG.type} disabled />
-              <Typography.Text type="secondary">
-                当前仅支持 tokens 切片方式。
-              </Typography.Text>
-            </Space>
-          </Form.Item>
-          <Form.Item<GraphCreateRequest>
-            label="切片大小"
-            name={["chunking", "size"]}
-            initialValue={DEFAULT_CHUNKING_CONFIG.size}
-            rules={[{ required: true, type: "number", min: 1 }]}
-          >
-            <InputNumber min={1} style={{ width: "100%" }} />
-          </Form.Item>
-          <Form.Item<GraphCreateRequest>
-            label="重叠大小"
-            name={["chunking", "overlap"]}
-            initialValue={DEFAULT_CHUNKING_CONFIG.overlap}
-            dependencies={[["chunking", "size"]]}
-            rules={[
-              { required: true, type: "number", min: 0 },
-              ({ getFieldValue }) => ({
-                validator(_, value) {
-                  const size = getFieldValue(["chunking", "size"]);
-                  if (
-                    typeof value !== "number" ||
-                    typeof size !== "number" ||
-                    value < size
-                  ) {
-                    return Promise.resolve();
-                  }
+          <div className="graph-create-layout analysis-form-grid">
+            <section className="graph-create-section">
+              <div className="graph-create-section-header">
+                <Typography.Text className="graph-create-section-kicker">
+                  基础信息
+                </Typography.Text>
+                <Typography.Paragraph className="muted-text graph-create-section-note">
+                  配置图谱名称、描述、绑定模型与保存目录。
+                </Typography.Paragraph>
+              </div>
+              <div className="graph-create-grid">
+                <Form.Item<GraphCreateRequest> label="名称" name="name" rules={[{ required: true }]}>
+                  <Input placeholder="例如: customer-service-kg" />
+                </Form.Item>
+                <Form.Item<GraphCreateRequest> label="绑定模型配置" name="model_profile_id">
+                  <Select
+                    allowClear
+                    placeholder="不选则使用默认模型配置"
+                    options={profiles.map((profile) => ({
+                      label: `${profile.name} (${profile.provider})`,
+                      value: profile.id,
+                    }))}
+                  />
+                </Form.Item>
+                <Form.Item<GraphCreateRequest>
+                  className="graph-create-field-span-full"
+                  label="描述"
+                  name="description"
+                >
+                  <Input.TextArea rows={3} placeholder="可选描述" />
+                </Form.Item>
+                <Form.Item<GraphCreateRequest>
+                  className="graph-create-field-span-full"
+                  label="保存位置"
+                  name="projects_root"
+                  rules={[{ required: true, whitespace: true }]}
+                  extra="最终目录将自动生成为 <保存位置>/<图谱ID>"
+                >
+                  <Input placeholder="例如: data/projects" />
+                </Form.Item>
+              </div>
+            </section>
 
-                  return Promise.reject(
-                    new Error("Chunk overlap must be smaller than chunk size."),
-                  );
-                },
-              }),
-            ]}
-          >
-            <InputNumber min={0} style={{ width: "100%" }} />
-          </Form.Item>
-          <Form.Item<GraphCreateRequest>
-            label="编码模型"
-            name={["chunking", "encoding_model"]}
-            initialValue={DEFAULT_CHUNKING_CONFIG.encoding_model}
-            rules={[{ required: true, whitespace: true }]}
-          >
-            <Input placeholder="例如: o200k_base" />
-          </Form.Item>
+            <section className="graph-create-section">
+              <div className="graph-create-section-header">
+                <Typography.Text className="graph-create-section-kicker">
+                  切片配置
+                </Typography.Text>
+                <Typography.Paragraph className="muted-text graph-create-section-note">
+                  控制切片粒度、重叠区间和编码模型。
+                </Typography.Paragraph>
+              </div>
+              <div className="graph-create-grid">
+                <Form.Item<GraphCreateRequest> label="切片方式">
+                  <Space direction="vertical" size={4} style={{ width: "100%" }}>
+                    <Input value={DEFAULT_CHUNKING_CONFIG.type} disabled />
+                    <Typography.Text type="secondary">
+                      当前仅支持 tokens 切片方式。
+                    </Typography.Text>
+                  </Space>
+                </Form.Item>
+                <Form.Item<GraphCreateRequest>
+                  label="编码模型"
+                  name={["chunking", "encoding_model"]}
+                  initialValue={DEFAULT_CHUNKING_CONFIG.encoding_model}
+                  rules={[{ required: true, whitespace: true }]}
+                >
+                  <Input placeholder="例如: o200k_base" />
+                </Form.Item>
+                <Form.Item<GraphCreateRequest>
+                  label="切片大小"
+                  name={["chunking", "size"]}
+                  initialValue={DEFAULT_CHUNKING_CONFIG.size}
+                  rules={[{ required: true, type: "number", min: 1 }]}
+                >
+                  <InputNumber min={1} style={{ width: "100%" }} />
+                </Form.Item>
+                <Form.Item<GraphCreateRequest>
+                  label="重叠大小"
+                  name={["chunking", "overlap"]}
+                  initialValue={DEFAULT_CHUNKING_CONFIG.overlap}
+                  dependencies={[["chunking", "size"]]}
+                  rules={[
+                    { required: true, type: "number", min: 0 },
+                    ({ getFieldValue }) => ({
+                      validator(_, value) {
+                        const size = getFieldValue(["chunking", "size"]);
+                        if (
+                          typeof value !== "number" ||
+                          typeof size !== "number" ||
+                          value < size
+                        ) {
+                          return Promise.resolve();
+                        }
+
+                        return Promise.reject(
+                          new Error("Chunk overlap must be smaller than chunk size."),
+                        );
+                      },
+                    }),
+                  ]}
+                >
+                  <InputNumber min={0} style={{ width: "100%" }} />
+                </Form.Item>
+              </div>
+            </section>
+          </div>
         </Form>
       </Modal>
     </div>
