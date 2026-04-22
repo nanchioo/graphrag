@@ -73,9 +73,9 @@ export function QueryPage() {
   const contextEntries = result ? Object.entries(result.context) : [];
 
   return (
-    <div className="page-stack">
+    <div className="page-stack analysis-page analysis-page--query">
       {contextHolder}
-      <div className="page-hero">
+      <div className="page-hero analysis-hero">
         <div>
           <Typography.Title level={3}>问答控制台</Typography.Title>
           <Typography.Paragraph className="muted-text">
@@ -86,7 +86,7 @@ export function QueryPage() {
 
       <QueryPanel graphs={graphs} loading={queryLoading || loading} onSubmit={handleSubmit} />
 
-      <Card className="surface-card answer-card" title="查询结果">
+      <Card className="surface-card answer-card analysis-card analysis-query-result" title="查询结果">
         {result ? (
           <Space direction="vertical" size="large" style={{ width: "100%" }}>
             <div>

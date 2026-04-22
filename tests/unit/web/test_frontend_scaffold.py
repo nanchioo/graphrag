@@ -370,6 +370,35 @@ def test_graph_operation_components_use_analysis_console_surface_classes():
     assert ".analysis-text-unit-list .ant-table-wrapper {" in styles_source
 
 
+def test_secondary_pages_and_forms_inherit_analysis_console_visual_language():
+    model_page_source = Path("web/src/pages/ModelConfigPage.tsx").read_text(
+        encoding="utf-8"
+    )
+    query_page_source = Path("web/src/pages/QueryPage.tsx").read_text(
+        encoding="utf-8"
+    )
+    query_panel_source = Path("web/src/components/QueryPanel.tsx").read_text(
+        encoding="utf-8"
+    )
+    profile_form_source = Path("web/src/components/ModelProfileForm.tsx").read_text(
+        encoding="utf-8"
+    )
+    styles_source = Path("web/src/styles.css").read_text(encoding="utf-8")
+
+    assert 'className="page-stack analysis-page analysis-page--models"' in model_page_source
+    assert 'className="surface-card analysis-card analysis-settings-card"' in model_page_source
+    assert 'className="page-stack analysis-page analysis-page--query"' in query_page_source
+    assert 'className="surface-card analysis-card analysis-query-panel"' in query_panel_source
+    assert 'className="surface-card answer-card analysis-card analysis-query-result"' in query_page_source
+    assert 'className="analysis-modal analysis-modal--profile"' in profile_form_source
+    assert ".analysis-page--models {" in styles_source
+    assert ".analysis-page--query {" in styles_source
+    assert ".analysis-settings-card {" in styles_source
+    assert ".analysis-query-panel {" in styles_source
+    assert ".analysis-query-result {" in styles_source
+    assert ".analysis-modal--profile .ant-modal-content {" in styles_source
+
+
 def test_graph_manage_page_keeps_build_polling_non_blocking():
     page_source = Path("web/src/pages/GraphManagePage.tsx").read_text(encoding="utf-8")
     primary_start = page_source.index("const [detailResult, statusResult, filesResult] =")

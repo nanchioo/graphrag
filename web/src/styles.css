@@ -141,6 +141,14 @@ body {
   gap: 22px;
 }
 
+.analysis-page--models {
+  gap: 22px;
+}
+
+.analysis-page--query {
+  gap: 22px;
+}
+
 .page-hero {
   display: flex;
   align-items: start;
@@ -274,6 +282,23 @@ body {
     linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(247, 250, 252, 0.86));
 }
 
+.analysis-settings-card {
+  background:
+    radial-gradient(circle at top right, rgba(39, 194, 217, 0.06), transparent 26%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(247, 250, 252, 0.86));
+}
+
+.analysis-query-panel {
+  background:
+    radial-gradient(circle at top right, rgba(39, 194, 217, 0.08), transparent 26%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(247, 250, 252, 0.86));
+}
+
+.analysis-query-result {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(247, 250, 252, 0.88));
+}
+
 .surface-card .ant-card-head {
   border-bottom-color: var(--analysis-line);
 }
@@ -349,6 +374,18 @@ body {
   border-radius: 18px;
 }
 
+.analysis-settings-card .ant-form-item-control-input,
+.analysis-query-panel .ant-form-item-control-input {
+  border-radius: 14px;
+}
+
+.analysis-settings-card .ant-table-wrapper,
+.analysis-query-result .ant-collapse {
+  border: 1px solid var(--analysis-line);
+  border-radius: 18px;
+  overflow: hidden;
+}
+
 .graph-create-modal.ant-modal {
   max-width: calc(100vw - 32px);
 }
@@ -357,6 +394,13 @@ body {
   border: 1px solid var(--analysis-line-strong);
   background: rgba(248, 251, 253, 0.94);
   box-shadow: 0 24px 80px rgba(11, 16, 24, 0.16);
+}
+
+.analysis-modal--profile .ant-modal-content {
+  border: 1px solid var(--analysis-line-strong);
+  background:
+    radial-gradient(circle at top right, rgba(39, 194, 217, 0.08), transparent 26%),
+    rgba(248, 251, 253, 0.94);
 }
 
 .graph-create-modal .ant-modal-content {

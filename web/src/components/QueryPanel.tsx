@@ -20,7 +20,7 @@ export function QueryPanel({ graphs, loading = false, onSubmit }: QueryPanelProp
   }, [form, graphs]);
 
   return (
-    <Card className="surface-card" title="发起问答">
+    <Card className="surface-card analysis-card analysis-query-panel" title="发起问答">
       <Form
         form={form}
         layout="vertical"

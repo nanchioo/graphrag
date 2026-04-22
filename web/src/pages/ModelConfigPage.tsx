@@ -126,13 +126,13 @@ export function ModelConfigPage() {
   }, []);
 
   return (
-    <div className="page-stack">
+    <div className="page-stack analysis-page analysis-page--models">
       {contextHolder}
-      <div className="page-hero">
+      <div className="page-hero analysis-hero">
         <div>
           <Typography.Title level={3}>模型配置</Typography.Title>
           <Typography.Paragraph className="muted-text">
-            统一管理 OpenAI、Azure OpenAI 和 Ollama 配置，并维护图谱项目默认路径。
+            统一管理 OpenAI、Azure OpenAI 和 Ollama 配置，并维护新建图谱默认使用的保存位置。
           </Typography.Paragraph>
         </div>
         <Button
@@ -147,7 +147,11 @@ export function ModelConfigPage() {
         </Button>
       </div>
 
-      <Card className="surface-card" title="系统路径配置" loading={loading}>
+      <Card
+        className="surface-card analysis-card analysis-settings-card"
+        title="系统路径配置"
+        loading={loading}
+      >
         <Form
           form={systemForm}
           layout="vertical"
@@ -155,9 +159,10 @@ export function ModelConfigPage() {
         >
           <Space direction="vertical" size="middle" style={{ width: "100%" }}>
             <Form.Item<SystemConfigPayload>
-              label="图谱项目根目录"
+              label="默认图谱保存位置"
               name="projects_root"
               rules={[{ required: true }]}
+              extra="新建图谱时会默认使用这里，也可以按图谱单独修改。"
             >
               <Input />
             </Form.Item>
@@ -184,7 +189,11 @@ export function ModelConfigPage() {
         </Form>
       </Card>
 
-      <Card className="surface-card" title="模型列表" loading={loading}>
+      <Card
+        className="surface-card analysis-card analysis-settings-card"
+        title="模型列表"
+        loading={loading}
+      >
         <Table
           rowKey="id"
           dataSource={profiles}

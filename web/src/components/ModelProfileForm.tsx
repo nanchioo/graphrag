@@ -140,6 +140,7 @@ export function ModelProfileForm({
 
   return (
     <Modal
+      className="analysis-modal analysis-modal--profile"
       open={open}
       title={mode === "create" ? "新增模型配置" : "编辑模型配置"}
       okText={mode === "create" ? "创建" : "保存"}
