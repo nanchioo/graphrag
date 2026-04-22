@@ -32,7 +32,9 @@ from api.schemas.graph import (
     DeleteArtifactsPayload,
     GraphBuildPayload,
     GraphStatusPayload,
+    SourceFileItem,
 )
+from api.services.graph_build_manifest_service import GraphBuildManifestService
 from api.services.model_profile_validation_service import (
     ModelProfileValidationService,
 )
@@ -52,6 +54,7 @@ class GraphRagWrapperService:
     """Provide a minimal wrapper over GraphRAG indexing and artifact lifecycle."""
 
     _INTERRUPTED_BUILD_MESSAGE = "Previous build was interrupted. Please retry."
+    _INTERRUPTED_RESUME_MESSAGE = "Previous build was interrupted. Please resume."
     _EMBEDDING_DIMENSION_PROBE_TEXT = "This is an LLM Embedding Test String"
     _cwd_lock: ClassVar[asyncio.Lock] = asyncio.Lock()
     _tasks: ClassVar[dict[str, asyncio.Task[None]]] = {}
@@ -61,6 +64,7 @@ class GraphRagWrapperService:
         source_ingest_service: SourceIngestService | None = None,
         model_profile_validation_service: ModelProfileValidationService | None = None,
         prompt_localization_service: PromptLocalizationService | None = None,
+        manifest_service: GraphBuildManifestService | None = None,
     ) -> None:
         self._source_ingest_service = source_ingest_service or SourceIngestService()
         self._model_profile_validation_service = (
@@ -69,6 +73,7 @@ class GraphRagWrapperService:
         self._prompt_localization_service = (
             prompt_localization_service or PromptLocalizationService()
         )
+        self._manifest_service = manifest_service or GraphBuildManifestService()
 
     async def run_in_project_context(
         self,
@@ -135,6 +140,7 @@ class GraphRagWrapperService:
     def start_build(
         self,
         graph_id: str,
+        action: str,
         method: str,
         force_rebuild: bool,
         app_config_service: AppConfigService,
@@ -142,10 +148,17 @@ class GraphRagWrapperService:
     ) -> GraphBuildPayload:
         """Mark the graph as building and schedule an asynchronous build task."""
         graph = self._reconcile_stale_build_state(graph_id, graph_registry_service)
+        root_dir = Path(graph.root_dir)
 
         if graph.model_profile_id:
             profile = app_config_service.get_model_profile(graph.model_profile_id)
             self._model_profile_validation_service.validate_stored_profile(profile)
+
+        if action == "resume" and not self._manifest_service.is_resumable(root_dir):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Graph project '{graph_id}' has no resumable build state.",
+            )
 
         if graph.status == "building":
             raise HTTPException(
@@ -157,6 +170,7 @@ class GraphRagWrapperService:
         task = asyncio.create_task(
             self.run_build(
                 graph_id=graph_id,
+                action=action,
                 method=method,
                 force_rebuild=force_rebuild,
                 app_config_service=app_config_service,
@@ -170,11 +184,13 @@ class GraphRagWrapperService:
             status=updated.status,
             last_build_at=updated.last_build_at,
             last_error=updated.last_error,
+            resumable=action == "resume",
         )
 
     async def run_build(
         self,
         graph_id: str,
+        action: str,
         method: str,
         force_rebuild: bool,
         app_config_service: AppConfigService,
@@ -184,6 +200,7 @@ class GraphRagWrapperService:
         graph = graph_registry_service.get_graph(graph_id)
         root_dir = Path(graph.root_dir)
         env_overrides: dict[str, str | None] | None = None
+        current_relative_path: str | None = None
 
         try:
             async with self._cwd_lock:
@@ -191,34 +208,95 @@ class GraphRagWrapperService:
 
                 if force_rebuild:
                     await self._delete_artifact_paths(root_dir)
+                    self._manifest_service.delete_manifest(root_dir)
 
                 if graph.model_profile_id:
                     profile = app_config_service.get_model_profile(graph.model_profile_id)
                     self._sync_model_profile(root_dir, profile)
                     env_overrides = self._build_model_env_overrides(profile)
 
-                documents = await self._source_ingest_service.load_source_documents(
-                    root_dir / "input"
+                manifest = self._manifest_service.prepare_manifest(
+                    root_dir=root_dir,
+                    graph_id=graph_id,
+                    action=action,
                 )
-                self._ensure_documents_available(documents)
+                if len(manifest.files) == 0:
+                    self._ensure_documents_available([])
 
-                input_documents = self._to_documents_dataframe(documents)
+                files_to_run = self._manifest_service.select_files_for_action(
+                    root_dir=root_dir,
+                    action=action,
+                )
+                if not files_to_run:
+                    self._manifest_service.mark_project_completed(root_dir)
+                    graph_registry_service.mark_build_succeeded(graph_id)
+                    return
 
                 with self._project_context(root_dir, env_overrides):
                     config = load_config(root_dir=root_dir)
                     await self._sync_vector_store_dimensions(config)
-                    outputs = await build_index(
-                        config=config,
-                        method=IndexingMethod(method),
-                        input_documents=input_documents,
+
+                    is_update_run = (
+                        action == "resume"
+                        or manifest.completed_file_count > 0
+                        or any(item.status == "skipped" for item in manifest.files)
                     )
+                    for file_entry in files_to_run:
+                        current_relative_path = file_entry.relative_path
+                        self._manifest_service.mark_file_started(
+                            root_dir=root_dir,
+                            relative_path=current_relative_path,
+                        )
+                        documents = await self._source_ingest_service.load_source_documents(
+                            root_dir / "input",
+                            relative_paths=[current_relative_path],
+                        )
+                        self._ensure_documents_available(documents)
+                        before_document_count, before_text_unit_count = (
+                            self._read_output_counts(root_dir)
+                        )
+                        input_documents = self._to_documents_dataframe(documents)
+                        outputs = await build_index(
+                            config=config,
+                            method=IndexingMethod(method),
+                            is_update_run=is_update_run,
+                            input_documents=input_documents,
+                        )
 
-                errors = [str(output.error) for output in outputs if output.error]
-                if errors:
-                    self._raise_pipeline_error(errors[0])
+                        errors = [str(output.error) for output in outputs if output.error]
+                        if errors:
+                            self._raise_pipeline_error(errors[0])
 
+                        after_document_count, after_text_unit_count = (
+                            self._read_output_counts(root_dir)
+                        )
+                        self._manifest_service.mark_file_succeeded(
+                            root_dir=root_dir,
+                            relative_path=current_relative_path,
+                            document_count=max(
+                                len(documents),
+                                after_document_count - before_document_count,
+                            ),
+                            text_unit_count=max(
+                                after_text_unit_count - before_text_unit_count,
+                                0,
+                            ),
+                        )
+                        current_relative_path = None
+                        is_update_run = True
+
+                self._manifest_service.mark_project_completed(root_dir)
             graph_registry_service.mark_build_succeeded(graph_id)
         except Exception as exc:  # noqa: BLE001
+            if (
+                current_relative_path is not None
+                and self._manifest_service.manifest_path(root_dir).exists()
+            ):
+                self._manifest_service.mark_file_failed(
+                    root_dir=root_dir,
+                    relative_path=current_relative_path,
+                    error_message=str(exc),
+                )
             graph_registry_service.mark_build_failed(graph_id, str(exc))
 
     async def get_status(
@@ -229,7 +307,7 @@ class GraphRagWrapperService:
         """Return build status together with source and artifact summaries."""
         graph = self._reconcile_stale_build_state(graph_id, graph_registry_service)
         root_dir = Path(graph.root_dir)
-        source_files = await self._source_ingest_service.list_files(root_dir / "input")
+        source_files = await self.list_source_files(graph_id, graph_registry_service)
         artifact_paths = await self._existing_artifact_paths(root_dir)
         document_count, text_unit_count = self._read_output_counts(root_dir)
         last_error = self._diagnose_failure_message(root_dir, graph.last_error)
@@ -240,6 +318,18 @@ class GraphRagWrapperService:
             document_count=document_count,
             text_unit_count=text_unit_count,
         )
+        resumable = False
+        current_file: str | None = None
+        completed_file_count = 0
+        failed_file_count = 0
+        pending_file_count = 0
+        if self._manifest_service.manifest_path(root_dir).exists():
+            manifest = self._manifest_service.load_manifest(root_dir)
+            resumable = self._manifest_service.is_resumable(root_dir)
+            current_file = manifest.current_file
+            completed_file_count = manifest.completed_file_count
+            failed_file_count = manifest.failed_file_count
+            pending_file_count = manifest.pending_file_count
 
         return GraphStatusPayload(
             graph_id=graph.id,
@@ -255,7 +345,23 @@ class GraphRagWrapperService:
             progress_percent=progress_percent,
             progress_stage=progress_stage,
             progress_message=progress_message,
+            resumable=resumable,
+            current_file=current_file,
+            completed_file_count=completed_file_count,
+            failed_file_count=failed_file_count,
+            pending_file_count=pending_file_count,
         )
+
+    async def list_source_files(
+        self,
+        graph_id: str,
+        graph_registry_service: GraphRegistryService,
+    ) -> list[SourceFileItem]:
+        """List graph source files merged with persisted manifest metadata."""
+        graph = graph_registry_service.get_graph(graph_id)
+        root_dir = Path(graph.root_dir)
+        items = await self._source_ingest_service.list_files(root_dir / "input")
+        return self._manifest_service.merge_source_items(root_dir=root_dir, items=items)
 
     async def delete_artifacts(
         self,
@@ -377,6 +483,17 @@ class GraphRagWrapperService:
 
         if graph.status != "building" or active_task is not None:
             return graph
+
+        root_dir = Path(graph.root_dir)
+        if self._manifest_service.manifest_path(root_dir).exists():
+            self._manifest_service.mark_interrupted(
+                root_dir=root_dir,
+                error_message=self._INTERRUPTED_RESUME_MESSAGE,
+            )
+            return graph_registry_service.mark_build_failed(
+                graph_id,
+                self._INTERRUPTED_RESUME_MESSAGE,
+            )
 
         return graph_registry_service.mark_build_failed(
             graph_id,

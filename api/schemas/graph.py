@@ -7,7 +7,44 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator, model_validator
+
+
+class GraphChunkingCreateRequest(BaseModel):
+    """Chunking configuration accepted during graph creation."""
+
+    type: Literal["tokens"] = "tokens"
+    size: int = 1200
+    overlap: int = 100
+    encoding_model: str = "o200k_base"
+
+    @field_validator("size")
+    @classmethod
+    def validate_size(cls, value: int) -> int:
+        if value <= 0:
+            raise ValueError("Chunk size must be greater than 0.")
+        return value
+
+    @field_validator("overlap")
+    @classmethod
+    def validate_overlap(cls, value: int) -> int:
+        if value < 0:
+            raise ValueError("Chunk overlap must be greater than or equal to 0.")
+        return value
+
+    @field_validator("encoding_model")
+    @classmethod
+    def validate_encoding_model(cls, value: str) -> str:
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("Encoding model is required.")
+        return normalized
+
+    @model_validator(mode="after")
+    def validate_overlap_smaller_than_size(self) -> "GraphChunkingCreateRequest":
+        if self.overlap >= self.size:
+            raise ValueError("Chunk overlap must be smaller than chunk size.")
+        return self
 
 
 class GraphCreateRequest(BaseModel):
@@ -16,6 +53,7 @@ class GraphCreateRequest(BaseModel):
     name: str
     description: str | None = None
     model_profile_id: str | None = None
+    chunking: GraphChunkingCreateRequest | None = None
 
 
 class GraphSummary(BaseModel):
@@ -47,6 +85,11 @@ class GraphListPayload(BaseModel):
     total: int = 0
 
 
+GraphFileBuildStatus = Literal[
+    "pending", "building", "succeeded", "failed", "skipped"
+]
+
+
 class SourceFileItem(BaseModel):
     """Metadata for a source file uploaded to a graph project."""
 
@@ -55,6 +98,13 @@ class SourceFileItem(BaseModel):
     extension: str
     size_bytes: int
     created_at: str
+    build_status: GraphFileBuildStatus | None = None
+    is_current: bool = False
+    attempt_count: int = 0
+    last_build_error: str | None = None
+    last_built_at: str | None = None
+    document_count: int = 0
+    text_unit_count: int = 0
 
 
 class SourceFileListPayload(BaseModel):
@@ -65,13 +115,21 @@ class SourceFileListPayload(BaseModel):
 
 
 GraphBuildMethod = Literal["standard", "fast"]
+GraphBuildAction = Literal["start", "resume"]
 
 
 class GraphBuildRequest(BaseModel):
     """Request payload for graph build execution."""
 
+    action: GraphBuildAction = "start"
     method: GraphBuildMethod = "standard"
     force_rebuild: bool = False
+
+    @model_validator(mode="after")
+    def validate_action_force_rebuild_combo(self) -> "GraphBuildRequest":
+        if self.action == "resume" and self.force_rebuild:
+            raise ValueError("Resume build cannot be combined with force rebuild.")
+        return self
 
 
 class GraphBuildPayload(BaseModel):
@@ -81,6 +139,7 @@ class GraphBuildPayload(BaseModel):
     status: str
     last_build_at: str | None = None
     last_error: str | None = None
+    resumable: bool = False
 
 
 class GraphStatusPayload(BaseModel):
@@ -98,7 +157,12 @@ class GraphStatusPayload(BaseModel):
     artifact_paths: list[str] = Field(default_factory=list)
     progress_percent: int = 0
     progress_stage: str = "awaiting_upload"
-    progress_message: str = "等待上传源文件。"
+    progress_message: str = "Waiting for source files."
+    resumable: bool = False
+    current_file: str | None = None
+    completed_file_count: int = 0
+    failed_file_count: int = 0
+    pending_file_count: int = 0
 
 
 class DeleteArtifactsPayload(BaseModel):

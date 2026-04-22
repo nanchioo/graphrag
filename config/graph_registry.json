@@ -1,15 +1,3 @@
 {
-  "items": [
-    {
-      "id": "fdf-e584d1a6",
-      "name": "fdf",
-      "description": "222",
-      "root_dir": "D:\\Develop\\Projects\\Public\\Backend\\D5\\graphrag\\data\\projects\\fdf-e584d1a6",
-      "status": "ready",
-      "model_profile_id": "8f39bfcf-426b-4fcc-b493-0a39bff679a5",
-      "created_at": "2026-04-19T08:47:06.895141+00:00",
-      "last_build_at": "2026-04-19T08:57:17.228965+00:00",
-      "last_error": null
-    }
-  ]
+  "items": []
 }

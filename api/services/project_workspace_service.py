@@ -5,9 +5,13 @@
 
 from pathlib import Path
 
+import yaml
 from graphrag.cli.initialize import initialize_project_at
 
+from api.schemas.graph import GraphChunkingCreateRequest
 from api.services.prompt_localization_service import PromptLocalizationService
+
+DEFAULT_CHUNKING_CONFIG = GraphChunkingCreateRequest()
 
 
 class ProjectWorkspaceService:
@@ -26,6 +30,7 @@ class ProjectWorkspaceService:
         root_dir: Path,
         model: str,
         embedding_model: str,
+        chunking: GraphChunkingCreateRequest | None = None,
     ) -> None:
         """Create a standard GraphRAG project workspace."""
         initialize_project_at(
@@ -35,3 +40,17 @@ class ProjectWorkspaceService:
             embedding_model=embedding_model,
         )
         self._prompt_localization_service.localize_workspace_prompts(root_dir)
+        self._write_chunking_settings(root_dir, chunking or DEFAULT_CHUNKING_CONFIG)
+
+    def _write_chunking_settings(
+        self,
+        root_dir: Path,
+        chunking: GraphChunkingCreateRequest,
+    ) -> None:
+        settings_path = root_dir / "settings.yaml"
+        settings_data = yaml.safe_load(settings_path.read_text(encoding="utf-8"))
+        settings_data["chunking"] = chunking.model_dump()
+        settings_path.write_text(
+            yaml.safe_dump(settings_data, sort_keys=False, allow_unicode=True),
+            encoding="utf-8",
+        )

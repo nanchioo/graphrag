@@ -82,12 +82,20 @@ class SourceIngestService:
 
         return items
 
-    async def load_source_documents(self, input_dir: Path) -> list[TextDocument]:
+    async def load_source_documents(
+        self,
+        input_dir: Path,
+        relative_paths: list[str] | None = None,
+    ) -> list[TextDocument]:
         """Load all supported source files as GraphRAG text documents."""
         storage = FileStorage(str(input_dir))
         documents: list[TextDocument] = []
+        allowed_paths = set(relative_paths or [])
 
         for relative_path in sorted(storage.find(re.compile(r".+"))):
+            if allowed_paths and relative_path not in allowed_paths:
+                continue
+
             file_path = storage.get_path(relative_path)
             if not file_path.is_file():
                 continue

@@ -27,6 +27,19 @@ CONSOLE_PREFIX = "/console"
 
 logger = logging.getLogger(__name__)
 
+
+def _normalize_error_data(data: Any) -> Any:
+    if isinstance(data, BaseException):
+        return str(data)
+    if isinstance(data, dict):
+        return {key: _normalize_error_data(value) for key, value in data.items()}
+    if isinstance(data, list):
+        return [_normalize_error_data(item) for item in data]
+    if isinstance(data, tuple):
+        return [_normalize_error_data(item) for item in data]
+    return data
+
+
 def _error_response(status_code: int, message: str, data: Any = None) -> JSONResponse:
     payload = ApiResponse[Any](success=False, message=message, data=data)
     return JSONResponse(status_code=status_code, content=payload.model_dump())
@@ -39,7 +52,11 @@ def http_exception_handler(_, exc: HTTPException) -> JSONResponse:
 
 def validation_exception_handler(_, exc: RequestValidationError) -> JSONResponse:
     """Return request validation errors in the shared API response format."""
-    return _error_response(422, "Request validation failed.", exc.errors())
+    return _error_response(
+        422,
+        "Request validation failed.",
+        _normalize_error_data(exc.errors()),
+    )
 
 
 def unhandled_exception_handler(_, exc: Exception) -> JSONResponse:

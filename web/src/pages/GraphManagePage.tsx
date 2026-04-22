@@ -2,14 +2,17 @@ import {
   Button,
   Card,
   Descriptions,
+  Divider,
   Empty,
   Form,
   Input,
+  InputNumber,
   List,
   Modal,
   Select,
   Space,
   Spin,
+  Tag,
   Typography,
   message,
 } from "antd";
@@ -36,6 +39,7 @@ import { GraphTable } from "../components/GraphTable";
 import { TextUnitList } from "../components/TextUnitList";
 import { UploadPanel } from "../components/UploadPanel";
 import type {
+  GraphBuildAction,
   GraphCreateRequest,
   GraphDetailPayload,
   GraphPreviewPayload,
@@ -50,6 +54,13 @@ import type {
 
 type HydrateGraphOptions = {
   showSpinner?: boolean;
+};
+
+const DEFAULT_CHUNKING_CONFIG = {
+  type: "tokens" as const,
+  size: 1200,
+  overlap: 100,
+  encoding_model: "o200k_base",
 };
 
 export function GraphManagePage() {
@@ -85,6 +96,36 @@ export function GraphManagePage() {
     setGraphTextUnits(null);
     setGraphPreview(null);
     setGraphReports(null);
+  }
+
+  function buildFileStatusTagColor(status?: string | null) {
+    switch (status) {
+      case "succeeded":
+        return "green";
+      case "failed":
+        return "red";
+      case "building":
+        return "processing";
+      case "pending":
+        return "gold";
+      case "skipped":
+        return "default";
+      default:
+        return "default";
+    }
+  }
+
+  function openCreateModal() {
+    createForm.resetFields();
+    createForm.setFieldsValue({
+      chunking: DEFAULT_CHUNKING_CONFIG,
+    });
+    setCreateOpen(true);
+  }
+
+  function closeCreateModal() {
+    setCreateOpen(false);
+    createForm.resetFields();
   }
 
   async function loadGraphs() {
@@ -252,7 +293,7 @@ export function GraphManagePage() {
     }
   }
 
-  async function handleBuild() {
+  async function handleBuildAction(action: GraphBuildAction, forceRebuild: boolean) {
     if (!selectedGraphId) {
       return;
     }
@@ -261,8 +302,9 @@ export function GraphManagePage() {
       setActionLoading(true);
       setBuildAttemptError(null);
       const buildPayload = await buildGraph(selectedGraphId, {
+        action,
         method: "standard",
-        force_rebuild: false,
+        force_rebuild: forceRebuild,
       });
 
       setGraphStatus((current) => ({
@@ -279,6 +321,11 @@ export function GraphManagePage() {
         progress_percent: current?.progress_percent ?? 20,
         progress_stage: current?.progress_stage ?? "build_started",
         progress_message: current?.progress_message ?? "已启动构建，正在读取源文件。",
+        resumable: buildPayload.resumable,
+        current_file: null,
+        completed_file_count: forceRebuild ? 0 : current?.completed_file_count ?? 0,
+        failed_file_count: 0,
+        pending_file_count: graphFiles?.total ?? current?.pending_file_count ?? 0,
       }));
       updateGraphSummaryStatus(selectedGraphId, buildPayload.status);
 
@@ -315,6 +362,11 @@ export function GraphManagePage() {
               artifact_paths: [],
               progress_percent: 10,
               progress_stage: "awaiting_build",
+              resumable: false,
+              current_file: null,
+              completed_file_count: 0,
+              failed_file_count: 0,
+              pending_file_count: current.source_file_count,
               progress_message: "已上传源文件，等待开始构建。",
             }
           : current,
@@ -466,7 +518,7 @@ export function GraphManagePage() {
                   选择一个图谱继续工作，或新建项目开始构建。
                 </Typography.Paragraph>
               </div>
-              <Button type="primary" onClick={() => setCreateOpen(true)}>
+              <Button type="primary" onClick={openCreateModal}>
                 新建图谱
               </Button>
             </div>
@@ -514,7 +566,9 @@ export function GraphManagePage() {
                 status={graphStatus}
                 actionError={buildAttemptError}
                 busy={actionLoading}
-                onBuild={async () => handleBuild()}
+                onStartBuild={async () => handleBuildAction("start", false)}
+                onResumeBuild={async () => handleBuildAction("resume", false)}
+                onFullRebuild={async () => handleBuildAction("start", true)}
                 onRefresh={async () => {
                   if (selectedGraphId) {
                     await hydrateGraph(selectedGraphId);
@@ -530,10 +584,32 @@ export function GraphManagePage() {
                     dataSource={graphFiles.items}
                     renderItem={(item) => (
                       <List.Item>
-                        <Space direction="vertical" size={2}>
-                          <Typography.Text strong>{item.name}</Typography.Text>
+                        <Space direction="vertical" size={2} style={{ width: "100%" }}>
+                          <Space>
+                            <Typography.Text strong>{item.name}</Typography.Text>
+                            {item.build_status ? (
+                              <Tag color={buildFileStatusTagColor(item.build_status)}>
+                                {item.build_status}
+                              </Tag>
+                            ) : null}
+                            {item.is_current ? <Tag color="processing">当前</Tag> : null}
+                          </Space>
                           <Typography.Text className="muted-text">
                             {item.extension} 路 {item.size_bytes} bytes
+                          </Typography.Text>
+                          <Typography.Text className="muted-text">
+                            重试次数 {item.attempt_count ?? 0}
+                          </Typography.Text>
+                          {item.last_built_at ? (
+                            <Typography.Text className="muted-text">
+                              最近构建 {item.last_built_at}
+                            </Typography.Text>
+                          ) : null}
+                          {item.last_build_error ? (
+                            <Typography.Text type="danger">{item.last_build_error}</Typography.Text>
+                          ) : null}
+                          <Typography.Text className="muted-text">
+                            文档 {item.document_count ?? 0} | 切片 {item.text_unit_count ?? 0}
                           </Typography.Text>
                         </Space>
                       </List.Item>
@@ -572,13 +648,16 @@ export function GraphManagePage() {
         okText="创建"
         cancelText="取消"
         confirmLoading={createLoading}
-        onCancel={() => setCreateOpen(false)}
+        onCancel={closeCreateModal}
         onOk={() => void createForm.submit()}
         destroyOnClose
       >
         <Form
           form={createForm}
           layout="vertical"
+          initialValues={{
+            chunking: DEFAULT_CHUNKING_CONFIG,
+          }}
           onFinish={(values) => void handleCreateGraph(values)}
         >
           <Form.Item<GraphCreateRequest> label="名称" name="name" rules={[{ required: true }]}>
@@ -596,6 +675,67 @@ export function GraphManagePage() {
                 value: profile.id,
               }))}
             />
+          </Form.Item>
+          <Divider>切片配置</Divider>
+          <Form.Item<GraphCreateRequest>
+            name={["chunking", "type"]}
+            initialValue={DEFAULT_CHUNKING_CONFIG.type}
+            hidden
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item<GraphCreateRequest>
+            label="切片方式"
+          >
+            <Space direction="vertical" size={4} style={{ width: "100%" }}>
+              <Input value={DEFAULT_CHUNKING_CONFIG.type} disabled />
+              <Typography.Text type="secondary">
+                当前仅支持 tokens 切片方式。
+              </Typography.Text>
+            </Space>
+          </Form.Item>
+          <Form.Item<GraphCreateRequest>
+            label="切片大小"
+            name={["chunking", "size"]}
+            initialValue={DEFAULT_CHUNKING_CONFIG.size}
+            rules={[{ required: true, type: "number", min: 1 }]}
+          >
+            <InputNumber min={1} style={{ width: "100%" }} />
+          </Form.Item>
+          <Form.Item<GraphCreateRequest>
+            label="重叠大小"
+            name={["chunking", "overlap"]}
+            initialValue={DEFAULT_CHUNKING_CONFIG.overlap}
+            dependencies={[["chunking", "size"]]}
+            rules={[
+              { required: true, type: "number", min: 0 },
+              ({ getFieldValue }) => ({
+                validator(_, value) {
+                  const size = getFieldValue(["chunking", "size"]);
+                  if (
+                    typeof value !== "number" ||
+                    typeof size !== "number" ||
+                    value < size
+                  ) {
+                    return Promise.resolve();
+                  }
+
+                  return Promise.reject(
+                    new Error("Chunk overlap must be smaller than chunk size."),
+                  );
+                },
+              }),
+            ]}
+          >
+            <InputNumber min={0} style={{ width: "100%" }} />
+          </Form.Item>
+          <Form.Item<GraphCreateRequest>
+            label="编码模型"
+            name={["chunking", "encoding_model"]}
+            initialValue={DEFAULT_CHUNKING_CONFIG.encoding_model}
+            rules={[{ required: true, whitespace: true }]}
+          >
+            <Input placeholder="例如: o200k_base" />
           </Form.Item>
         </Form>
       </Modal>

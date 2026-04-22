@@ -5,6 +5,7 @@ export interface ApiResponse<T> {
 }
 
 export type GraphBuildMethod = "standard" | "fast";
+export type GraphBuildAction = "start" | "resume";
 export type QueryMode = "local" | "global" | "basic" | "drift";
 export type ModelProvider = "openai" | "azure" | "ollama";
 
@@ -31,10 +32,18 @@ export interface GraphDetailPayload {
   last_build_at?: string | null;
 }
 
+export interface GraphChunkingCreateRequest {
+  type: "tokens";
+  size: number;
+  overlap: number;
+  encoding_model: string;
+}
+
 export interface GraphCreateRequest {
   name: string;
   description?: string;
   model_profile_id?: string;
+  chunking?: GraphChunkingCreateRequest;
 }
 
 export interface SourceFileItem {
@@ -43,6 +52,13 @@ export interface SourceFileItem {
   extension: string;
   size_bytes: number;
   created_at: string;
+  build_status?: "pending" | "building" | "succeeded" | "failed" | "skipped" | null;
+  is_current?: boolean;
+  attempt_count?: number;
+  last_build_error?: string | null;
+  last_built_at?: string | null;
+  document_count?: number;
+  text_unit_count?: number;
 }
 
 export interface SourceFileListPayload {
@@ -51,6 +67,7 @@ export interface SourceFileListPayload {
 }
 
 export interface GraphBuildRequest {
+  action: GraphBuildAction;
   method: GraphBuildMethod;
   force_rebuild: boolean;
 }
@@ -60,6 +77,7 @@ export interface GraphBuildPayload {
   status: string;
   last_build_at?: string | null;
   last_error?: string | null;
+  resumable: boolean;
 }
 
 export interface GraphStatusPayload {
@@ -76,6 +94,11 @@ export interface GraphStatusPayload {
   progress_percent: number;
   progress_stage: string;
   progress_message: string;
+  resumable: boolean;
+  current_file?: string | null;
+  completed_file_count: number;
+  failed_file_count: number;
+  pending_file_count: number;
 }
 
 export interface DeleteArtifactsPayload {

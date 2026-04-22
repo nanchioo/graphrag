@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 from api.deps import get_app_config_service, get_graph_registry_service
 from api.schemas.config import SystemConfigPayload
 from api.services.app_config_service import AppConfigService
+from api.services.graph_build_manifest_service import GraphBuildManifestService
 from api.services.graph_registry_service import GraphRegistryService
 from api.services.source_ingest_service import SourceIngestService
 from main import app
@@ -126,6 +127,11 @@ def test_upload_graph_files_persists_files_and_lists_sources(
         "progress_percent": 10,
         "progress_stage": "awaiting_build",
         "progress_message": "已上传源文件, 等待开始构建。",
+        "resumable": False,
+        "current_file": None,
+        "completed_file_count": 0,
+        "failed_file_count": 0,
+        "pending_file_count": 0,
     }
 
     graph_list_response = client.get("/api/graph")
@@ -179,3 +185,61 @@ async def test_source_ingest_service_loads_mixed_supported_documents(tmp_path: P
     assert text_by_title["JSONL One"] == "first row"
     assert text_by_title["JSONL Two"] == "second row"
     assert text_by_title["CSV One"] == "csv row"
+
+
+@pytest.mark.asyncio
+async def test_source_ingest_service_can_load_only_selected_relative_paths(
+    tmp_path: Path,
+):
+    input_dir = tmp_path / "input"
+    input_dir.mkdir(parents=True, exist_ok=True)
+    (input_dir / "keep.txt").write_text("keep me", encoding="utf-8")
+    (input_dir / "skip.txt").write_text("skip me", encoding="utf-8")
+
+    service = SourceIngestService()
+    documents = await service.load_source_documents(
+        input_dir,
+        relative_paths=["keep.txt"],
+    )
+
+    assert [document.title for document in documents] == ["keep.txt"]
+
+
+def test_list_graph_files_includes_manifest_build_metadata(
+    graph_file_client: tuple[
+        TestClient, Path, AppConfigService, GraphRegistryService
+    ],
+):
+    client, projects_root, _, _ = graph_file_client
+
+    create_response = client.post(
+        "/api/graph",
+        json={
+            "name": "Metadata Graph",
+            "description": "file metadata route test",
+        },
+    )
+    assert create_response.status_code == 201
+    graph_id = create_response.json()["data"]["id"]
+
+    upload_response = client.post(
+        f"/api/graph/{graph_id}/files",
+        files=[("files", ("notes.txt", b"hello graph", "text/plain"))],
+    )
+    assert upload_response.status_code == 201
+
+    root_dir = projects_root / graph_id
+    manifest_service = GraphBuildManifestService()
+    manifest_service.initialize_manifest(root_dir, graph_id=graph_id)
+    manifest_service.mark_file_started(root_dir, "notes.txt")
+    manifest_service.mark_file_failed(root_dir, "notes.txt", "provider timeout")
+
+    list_response = client.get(f"/api/graph/{graph_id}/files")
+
+    assert list_response.status_code == 200
+    item = list_response.json()["data"]["items"][0]
+    assert item["build_status"] == "failed"
+    assert item["is_current"] is False
+    assert item["attempt_count"] == 1
+    assert item["last_build_error"] == "provider timeout"
+    assert item["last_built_at"]

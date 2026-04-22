@@ -15,6 +15,7 @@ from openai import AuthenticationError
 
 from api.schemas.config import ModelProfileCreateRequest, SystemConfigPayload
 from api.services.app_config_service import AppConfigService
+from api.services.graph_build_manifest_service import GraphBuildManifestService
 from api.services.graph_registry_service import GraphRegistryService
 from api.services.graphrag_wrapper_service import GraphRagWrapperService
 from api.services.model_profile_validation_service import (
@@ -129,6 +130,7 @@ async def test_run_build_syncs_model_profile_and_marks_graph_ready(
     service = GraphRagWrapperService()
     await service.run_build(
         graph_id=graph_id,
+        action="start",
         method="standard",
         force_rebuild=False,
         app_config_service=app_config_service,
@@ -272,6 +274,7 @@ async def test_run_build_syncs_vector_size_before_build_index(
     service = GraphRagWrapperService()
     await service.run_build(
         graph_id=graph_id,
+        action="start",
         method="standard",
         force_rebuild=False,
         app_config_service=app_config_service,
@@ -623,6 +626,7 @@ def test_start_build_rejects_missing_embedding_model_before_pipeline(
     with pytest.raises(HTTPException) as exc_info:
         service.start_build(
             graph_id="graph-missing-embedding",
+            action="start",
             method="standard",
             force_rebuild=False,
             app_config_service=app_config_service,
@@ -689,6 +693,7 @@ def test_start_build_rejects_invalid_openai_auth_before_pipeline(
     with pytest.raises(HTTPException) as exc_info:
         service.start_build(
             graph_id="graph-invalid-auth",
+            action="start",
             method="standard",
             force_rebuild=False,
             app_config_service=app_config_service,
@@ -698,3 +703,174 @@ def test_start_build_rejects_invalid_openai_auth_before_pipeline(
     assert exc_info.value.status_code == 400
     assert "鉴权失败" in str(exc_info.value.detail)
     assert graph_registry_service.get_graph("graph-invalid-auth").status == "initialized"
+
+
+@pytest.mark.asyncio
+async def test_run_build_processes_files_sequentially_and_uses_update_mode_after_first_file(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    settings_path = tmp_path / "app_settings.json"
+    registry_path = tmp_path / "graph_registry.json"
+    projects_root = tmp_path / "projects"
+
+    app_config_service = AppConfigService(settings_path)
+    app_config_service.update_system_config(
+        SystemConfigPayload(
+            projects_root=str(projects_root),
+            upload_root=str(projects_root),
+            default_model_profile_id=None,
+        )
+    )
+    graph_registry_service = GraphRegistryService(registry_path)
+
+    graph_id = graph_registry_service.generate_graph_id("Sequential Build Graph")
+    root_dir = projects_root / graph_id
+    ProjectWorkspaceService().initialize_workspace(
+        root_dir=root_dir,
+        model="gpt-4.1",
+        embedding_model="text-embedding-3-large",
+    )
+    graph_registry_service.create_graph(
+        graph_id=graph_id,
+        name="Sequential Build Graph",
+        description="per-file build test",
+        root_dir=str(root_dir),
+        model_profile_id=None,
+    )
+    graph_registry_service.mark_build_started(graph_id)
+    (root_dir / "input" / "a.txt").write_text("alpha", encoding="utf-8")
+    (root_dir / "input" / "b.txt").write_text("beta", encoding="utf-8")
+
+    build_calls: list[dict[str, object]] = []
+
+    class FakeConfig:
+        def __init__(self) -> None:
+            self.vector_store = SimpleNamespace(
+                vector_size=3072,
+                index_schema={
+                    "entity_description": SimpleNamespace(vector_size=3072),
+                    "community_full_content": SimpleNamespace(vector_size=3072),
+                    "text_unit_text": SimpleNamespace(vector_size=3072),
+                },
+            )
+            self.embed_text = SimpleNamespace(embedding_model_id="default_embedding_model")
+            self.embedding_models = {
+                "default_embedding_model": SimpleNamespace(model="text-embedding-3-large")
+            }
+
+        def get_embedding_model_config(self, model_id: str):
+            return self.embedding_models[model_id]
+
+    class FakeEmbeddingModel:
+        async def embedding_async(self, *, input: list[str]):
+            assert input == ["This is an LLM Embedding Test String"]
+            return SimpleNamespace(first_embedding=[0.0] * 3072)
+
+    def fake_load_config(root_dir: Path):
+        return FakeConfig()
+
+    async def fake_build_index(**kwargs):
+        documents = kwargs["input_documents"]
+        build_calls.append(
+            {
+                "is_update_run": kwargs.get("is_update_run", False),
+                "titles": list(documents["title"]),
+            }
+        )
+        return [SimpleNamespace(workflow="done", result=None, state={}, error=None)]
+
+    monkeypatch.setattr(
+        "api.services.graphrag_wrapper_service.load_config",
+        fake_load_config,
+    )
+    monkeypatch.setattr(
+        "api.services.graphrag_wrapper_service.build_index",
+        fake_build_index,
+    )
+    monkeypatch.setattr(
+        "api.services.graphrag_wrapper_service.create_embedding",
+        lambda *_: FakeEmbeddingModel(),
+        raising=False,
+    )
+
+    service = GraphRagWrapperService()
+    await service.run_build(
+        graph_id=graph_id,
+        action="start",
+        method="standard",
+        force_rebuild=False,
+        app_config_service=app_config_service,
+        graph_registry_service=graph_registry_service,
+    )
+
+    assert build_calls == [
+        {"is_update_run": False, "titles": ["a.txt"]},
+        {"is_update_run": True, "titles": ["b.txt"]},
+    ]
+
+
+@pytest.mark.asyncio
+async def test_get_status_includes_resumable_manifest_counts(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    registry_path = tmp_path / "graph_registry.json"
+    projects_root = tmp_path / "projects"
+    graph_registry_service = GraphRegistryService(registry_path)
+
+    graph_id = graph_registry_service.generate_graph_id("Manifest Status Graph")
+    root_dir = projects_root / graph_id
+    root_dir.mkdir(parents=True, exist_ok=True)
+    (root_dir / "input").mkdir(parents=True, exist_ok=True)
+    (root_dir / "output").mkdir(parents=True, exist_ok=True)
+    (root_dir / "input" / "a.txt").write_text("alpha", encoding="utf-8")
+    (root_dir / "input" / "b.txt").write_text("beta", encoding="utf-8")
+    (root_dir / "input" / "c.txt").write_text("gamma", encoding="utf-8")
+
+    graph_registry_service.create_graph(
+        graph_id=graph_id,
+        name="Manifest Status Graph",
+        description="manifest counts test",
+        root_dir=str(root_dir),
+        model_profile_id=None,
+    )
+    graph_registry_service.mark_build_failed(graph_id, "provider timeout")
+
+    manifest_service = GraphBuildManifestService()
+    manifest_service.initialize_manifest(root_dir, graph_id=graph_id)
+    manifest_service.mark_file_succeeded(
+        root_dir=root_dir,
+        relative_path="a.txt",
+        document_count=1,
+        text_unit_count=4,
+    )
+    manifest_service.mark_file_failed(root_dir, "b.txt", "provider timeout")
+
+    def fake_load_config(root_dir: Path):
+        return SimpleNamespace(
+            output_storage=SimpleNamespace(base_dir=str(root_dir / "output")),
+            update_output_storage=SimpleNamespace(
+                base_dir=str(root_dir / "update_output")
+            ),
+            cache=SimpleNamespace(
+                storage=SimpleNamespace(base_dir=str(root_dir / "cache"))
+            ),
+            reporting=SimpleNamespace(base_dir=str(root_dir / "logs")),
+            vector_store=SimpleNamespace(db_uri=str(root_dir / "output" / "lancedb")),
+        )
+
+    monkeypatch.setattr(
+        "api.services.graphrag_wrapper_service.load_config",
+        fake_load_config,
+    )
+
+    service = GraphRagWrapperService(manifest_service=manifest_service)
+    payload = await service.get_status(
+        graph_id=graph_id,
+        graph_registry_service=graph_registry_service,
+    )
+
+    assert payload.resumable is True
+    assert payload.current_file is None
+    assert payload.completed_file_count == 1
+    assert payload.failed_file_count == 1
+    assert payload.pending_file_count == 1

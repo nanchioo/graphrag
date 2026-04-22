@@ -94,6 +94,7 @@ async def create_graph(
         root_dir=root_dir,
         model=completion_model,
         embedding_model=embedding_model,
+        chunking=payload.chunking,
     )
 
     graph = graph_registry_service.create_graph(
@@ -251,11 +252,15 @@ async def upload_graph_files(
 async def list_graph_files(
     graph_id: str,
     graph_registry_service: GraphRegistryService = Depends(get_graph_registry_service),
-    source_ingest_service: SourceIngestService = Depends(get_source_ingest_service),
+    graphrag_wrapper_service: GraphRagWrapperService = Depends(
+        get_graphrag_wrapper_service
+    ),
 ) -> ApiResponse[SourceFileListPayload]:
     """List source files in the graph project's input directory."""
-    graph = graph_registry_service.get_graph(graph_id)
-    items = await source_ingest_service.list_files(Path(graph.root_dir) / "input")
+    items = await graphrag_wrapper_service.list_source_files(
+        graph_id=graph_id,
+        graph_registry_service=graph_registry_service,
+    )
     return ApiResponse(
         message="Source files loaded.",
         data=SourceFileListPayload(items=items, total=len(items)),
@@ -279,6 +284,7 @@ async def start_graph_build(
     """Trigger an asynchronous GraphRAG build for a graph project."""
     build_payload = graphrag_wrapper_service.start_build(
         graph_id=graph_id,
+        action=payload.action,
         method=payload.method,
         force_rebuild=payload.force_rebuild,
         app_config_service=app_config_service,

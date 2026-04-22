@@ -3,6 +3,9 @@
 
 from pathlib import Path
 
+import yaml
+
+from api.schemas.graph import GraphChunkingCreateRequest
 from api.services.project_workspace_service import ProjectWorkspaceService
 from api.services.prompt_localization_service import PromptLocalizationService
 
@@ -65,3 +68,49 @@ def test_prompt_localization_is_idempotent(tmp_path: Path):
         )
         == 1
     )
+
+
+def test_initialize_workspace_writes_custom_chunking_settings(tmp_path: Path):
+    root_dir = tmp_path / "chunked-workspace"
+
+    ProjectWorkspaceService().initialize_workspace(
+        root_dir=root_dir,
+        model="qwen3.6-plus",
+        embedding_model="text-embedding-v3",
+        chunking=GraphChunkingCreateRequest(
+            type="tokens",
+            size=256,
+            overlap=32,
+            encoding_model="cl100k_base",
+        ),
+    )
+
+    settings_data = yaml.safe_load((root_dir / "settings.yaml").read_text(encoding="utf-8"))
+
+    assert settings_data["chunking"] == {
+        "type": "tokens",
+        "size": 256,
+        "overlap": 32,
+        "encoding_model": "cl100k_base",
+    }
+
+
+def test_initialize_workspace_keeps_default_chunking_when_not_overridden(
+    tmp_path: Path,
+):
+    root_dir = tmp_path / "default-chunking-workspace"
+
+    ProjectWorkspaceService().initialize_workspace(
+        root_dir=root_dir,
+        model="qwen3.6-plus",
+        embedding_model="text-embedding-v3",
+    )
+
+    settings_data = yaml.safe_load((root_dir / "settings.yaml").read_text(encoding="utf-8"))
+
+    assert settings_data["chunking"] == {
+        "type": "tokens",
+        "size": 1200,
+        "overlap": 100,
+        "encoding_model": "o200k_base",
+    }

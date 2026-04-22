@@ -181,6 +181,59 @@ def test_create_graph_initializes_workspace_and_registers_project(
     assert graph_id in registry_text
 
 
+def test_create_graph_accepts_chunking_config_and_persists_it_to_workspace(
+    graph_client: tuple[
+        TestClient, Path, Path, AppConfigService, GraphRegistryService
+    ],
+):
+    client, projects_root, _, _, _ = graph_client
+
+    response = client.post(
+        "/api/graph",
+        json={
+            "name": "Chunked Graph",
+            "chunking": {
+                "type": "tokens",
+                "size": 256,
+                "overlap": 32,
+                "encoding_model": "cl100k_base",
+            },
+        },
+    )
+
+    assert response.status_code == 201
+    graph_id = response.json()["data"]["id"]
+    settings_text = (projects_root / graph_id / "settings.yaml").read_text(
+        encoding="utf-8"
+    )
+    assert "size: 256" in settings_text
+    assert "overlap: 32" in settings_text
+    assert "encoding_model: cl100k_base" in settings_text
+
+
+def test_create_graph_rejects_chunk_overlap_that_is_not_smaller_than_chunk_size(
+    graph_client: tuple[
+        TestClient, Path, Path, AppConfigService, GraphRegistryService
+    ],
+):
+    client, _, _, _, _ = graph_client
+
+    response = client.post(
+        "/api/graph",
+        json={
+            "name": "Invalid Chunked Graph",
+            "chunking": {
+                "type": "tokens",
+                "size": 128,
+                "overlap": 128,
+                "encoding_model": "o200k_base",
+            },
+        },
+    )
+
+    assert response.status_code == 422
+
+
 def test_graph_registry_service_resolves_relative_root_dir_against_project_root(
     tmp_path: Path,
 ):

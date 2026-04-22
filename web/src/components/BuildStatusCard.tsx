@@ -15,7 +15,9 @@ interface BuildStatusCardProps {
   status: GraphStatusPayload | null;
   actionError?: string | null;
   busy?: boolean;
-  onBuild: () => Promise<void> | void;
+  onStartBuild: () => Promise<void> | void;
+  onResumeBuild: () => Promise<void> | void;
+  onFullRebuild: () => Promise<void> | void;
   onRefresh: () => Promise<void> | void;
   onClearArtifacts: () => Promise<void> | void;
 }
@@ -81,7 +83,9 @@ export function BuildStatusCard({
   status,
   actionError = null,
   busy = false,
-  onBuild,
+  onStartBuild,
+  onResumeBuild,
+  onFullRebuild,
   onRefresh,
   onClearArtifacts,
 }: BuildStatusCardProps) {
@@ -104,8 +108,21 @@ export function BuildStatusCard({
           <Button size="small" onClick={() => void onRefresh()}>
             刷新
           </Button>
-          <Button type="primary" size="small" loading={busy} onClick={() => void onBuild()}>
+          <Button
+            type="primary"
+            size="small"
+            loading={busy}
+            onClick={() => void onStartBuild()}
+          >
             开始构建
+          </Button>
+          {status.resumable ? (
+            <Button size="small" loading={busy} onClick={() => void onResumeBuild()}>
+              继续构建
+            </Button>
+          ) : null}
+          <Button size="small" danger loading={busy} onClick={() => void onFullRebuild()}>
+            全量重建
           </Button>
           <Button size="small" danger loading={busy} onClick={() => void onClearArtifacts()}>
             清理产物
@@ -123,6 +140,18 @@ export function BuildStatusCard({
       </div>
 
       <Descriptions size="small" column={1}>
+        <Descriptions.Item label="当前文件">
+          {status.current_file ?? "无"}
+        </Descriptions.Item>
+        <Descriptions.Item label="已完成文件">
+          {status.completed_file_count}
+        </Descriptions.Item>
+        <Descriptions.Item label="失败文件">
+          {status.failed_file_count}
+        </Descriptions.Item>
+        <Descriptions.Item label="待处理文件">
+          {status.pending_file_count}
+        </Descriptions.Item>
         <Descriptions.Item label="当前状态">
           {currentStatus ? <Tag color={currentStatus.color}>{currentStatus.label}</Tag> : null}
         </Descriptions.Item>

@@ -26,18 +26,19 @@ class FakeGraphRagWrapperService:
     """Fake GraphRAG wrapper service used to isolate router behavior."""
 
     def __init__(self):
-        self.build_calls: list[tuple[str, str, bool]] = []
+        self.build_calls: list[tuple[str, str, str, bool]] = []
         self.delete_calls: list[str] = []
 
     def start_build(
         self,
         graph_id: str,
+        action: str,
         method: str,
         force_rebuild: bool,
         graph_registry_service: GraphRegistryService,
         **_,
     ) -> GraphBuildPayload:
-        self.build_calls.append((graph_id, method, force_rebuild))
+        self.build_calls.append((graph_id, action, method, force_rebuild))
         graph_registry_service.mark_build_started(graph_id)
         graph = graph_registry_service.get_graph(graph_id)
         return GraphBuildPayload(
@@ -45,6 +46,7 @@ class FakeGraphRagWrapperService:
             status=graph.status,
             last_build_at=graph.last_build_at,
             last_error=None,
+            resumable=action == "resume",
         )
 
     async def get_status(
@@ -67,7 +69,12 @@ class FakeGraphRagWrapperService:
             artifact_paths=["output", "cache"],
             progress_percent=55,
             progress_stage="text_units_created",
-            progress_message="已完成切片, 正在抽取实体关系。",
+            progress_message="Chunk processing in progress.",
+            resumable=True,
+            current_file="input/hr-onboarding.pdf",
+            completed_file_count=1,
+            failed_file_count=1,
+            pending_file_count=0,
         )
 
     async def delete_artifacts(
@@ -167,9 +174,88 @@ def test_start_graph_build_returns_accepted_status(
             "status": "building",
             "last_build_at": None,
             "last_error": None,
+            "resumable": False,
         },
     }
-    assert fake_wrapper_service.build_calls == [(graph_id, "standard", True)]
+    assert fake_wrapper_service.build_calls == [(graph_id, "start", "standard", True)]
+
+
+def test_start_graph_build_accepts_resume_action(
+    build_client: tuple[
+        TestClient,
+        Path,
+        AppConfigService,
+        GraphRegistryService,
+        FakeGraphRagWrapperService,
+    ],
+):
+    client, _, _, _, fake_wrapper_service = build_client
+
+    create_response = client.post(
+        "/api/graph",
+        json={
+            "name": "Resume Graph",
+            "description": "resume route test",
+        },
+    )
+    assert create_response.status_code == 201
+    graph_id = create_response.json()["data"]["id"]
+
+    build_response = client.post(
+        f"/api/graph/{graph_id}/build",
+        json={
+            "action": "resume",
+            "method": "standard",
+            "force_rebuild": False,
+        },
+    )
+
+    assert build_response.status_code == 202
+    assert build_response.json() == {
+        "success": True,
+        "message": "Graph build started.",
+        "data": {
+            "graph_id": graph_id,
+            "status": "building",
+            "last_build_at": None,
+            "last_error": None,
+            "resumable": True,
+        },
+    }
+    assert fake_wrapper_service.build_calls == [(graph_id, "resume", "standard", False)]
+
+
+def test_start_graph_build_rejects_resume_with_force_rebuild(
+    build_client: tuple[
+        TestClient,
+        Path,
+        AppConfigService,
+        GraphRegistryService,
+        FakeGraphRagWrapperService,
+    ],
+):
+    client, _, _, _, _ = build_client
+
+    create_response = client.post(
+        "/api/graph",
+        json={
+            "name": "Invalid Resume Graph",
+            "description": "resume validation test",
+        },
+    )
+    assert create_response.status_code == 201
+    graph_id = create_response.json()["data"]["id"]
+
+    build_response = client.post(
+        f"/api/graph/{graph_id}/build",
+        json={
+            "action": "resume",
+            "method": "standard",
+            "force_rebuild": True,
+        },
+    )
+
+    assert build_response.status_code == 422
 
 
 def test_get_graph_status_returns_build_snapshot(
@@ -213,7 +299,12 @@ def test_get_graph_status_returns_build_snapshot(
             "artifact_paths": ["output", "cache"],
             "progress_percent": 55,
             "progress_stage": "text_units_created",
-            "progress_message": "已完成切片, 正在抽取实体关系。",
+            "progress_message": "Chunk processing in progress.",
+            "resumable": True,
+            "current_file": "input/hr-onboarding.pdf",
+            "completed_file_count": 1,
+            "failed_file_count": 1,
+            "pending_file_count": 0,
         },
     }
 
