@@ -1,0 +1,612 @@
+<style>
+  .other-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 22px;
+  }
+
+  .other-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 20px;
+    background: #fff;
+    overflow: hidden;
+    box-shadow: 0 14px 30px rgba(17, 19, 23, 0.05);
+  }
+
+  .other-card .card-image {
+    padding: 18px;
+    background: linear-gradient(180deg, #fbfbfc 0%, #f4f5f7 100%);
+  }
+
+  .other-card .card-body {
+    padding: 18px 18px 20px;
+  }
+
+  .palette {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .swatch {
+    width: 54px;
+    height: 14px;
+    border-radius: 999px;
+    border: 1px solid rgba(17, 19, 23, 0.06);
+  }
+
+  .theme {
+    --bg: #f3f4f6;
+    --panel: #ffffff;
+    --line: #e5e7eb;
+    --text: #111317;
+    --accent: #1d6a58;
+    --accent-soft: rgba(29, 106, 88, 0.10);
+    --accent-mid: rgba(29, 106, 88, 0.18);
+    --accent-deep: rgba(29, 106, 88, 0.84);
+  }
+
+  .theme-d {
+    --accent: #4c648f;
+    --accent-soft: rgba(76, 100, 143, 0.10);
+    --accent-mid: rgba(76, 100, 143, 0.18);
+    --accent-deep: rgba(76, 100, 143, 0.84);
+  }
+
+  .theme-e {
+    --accent: #0f7b81;
+    --accent-soft: rgba(15, 123, 129, 0.10);
+    --accent-mid: rgba(15, 123, 129, 0.18);
+    --accent-deep: rgba(15, 123, 129, 0.84);
+  }
+
+  .mini-shell {
+    border: 1px solid #dde1e7;
+    border-radius: 18px;
+    overflow: hidden;
+    background: var(--bg);
+  }
+
+  .mini-topbar {
+    height: 46px;
+    border-bottom: 1px solid var(--line);
+    background: rgba(255,255,255,0.92);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 12px;
+  }
+
+  .mini-bread {
+    width: 86px;
+    height: 8px;
+    border-radius: 999px;
+    background: #b8bec6;
+  }
+
+  .mini-action {
+    width: 58px;
+    height: 26px;
+    border-radius: 9px;
+    background: var(--accent-deep);
+  }
+
+  .mini-layout {
+    display: grid;
+    grid-template-columns: 84px minmax(0, 1fr);
+    min-height: 220px;
+  }
+
+  .mini-sidebar {
+    border-right: 1px solid var(--line);
+    background: rgba(255,255,255,0.9);
+    padding: 10px 8px;
+  }
+
+  .mini-logo {
+    height: 24px;
+    border-radius: 8px;
+    background: #17191d;
+    margin-bottom: 10px;
+  }
+
+  .mini-nav {
+    height: 24px;
+    border-radius: 8px;
+    margin-bottom: 6px;
+    background: transparent;
+    border: 1px solid transparent;
+  }
+
+  .mini-nav.active {
+    background: var(--accent-soft);
+    border-color: var(--accent-mid);
+  }
+
+  .mini-main {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .mini-title {
+    width: 92px;
+    height: 12px;
+    border-radius: 999px;
+    background: #17191d;
+  }
+
+  .mini-sub {
+    width: 142px;
+    height: 8px;
+    border-radius: 999px;
+    background: #d8dde3;
+  }
+
+  .mini-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .mini-stat {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--panel);
+    padding: 10px;
+  }
+
+  .mini-stat .k {
+    width: 34px;
+    height: 7px;
+    border-radius: 999px;
+    background: #ced4db;
+    margin-bottom: 8px;
+  }
+
+  .mini-stat .v {
+    width: 48px;
+    height: 14px;
+    border-radius: 999px;
+    background: #17191d;
+    margin-bottom: 8px;
+  }
+
+  .mini-stat .d {
+    width: 28px;
+    height: 7px;
+    border-radius: 999px;
+    background: var(--accent);
+  }
+
+  .mini-panels {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    gap: 8px;
+  }
+
+  .mini-panel {
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: #fff;
+    padding: 10px;
+  }
+
+  .mini-panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .mini-panel-head .l {
+    width: 56px;
+    height: 9px;
+    border-radius: 999px;
+    background: #17191d;
+  }
+
+  .mini-panel-head .r {
+    width: 30px;
+    height: 18px;
+    border-radius: 999px;
+    background: var(--accent-soft);
+    border: 1px solid var(--accent-mid);
+  }
+
+  .mini-line,
+  .mini-bars {
+    position: relative;
+    height: 72px;
+    border: 1px dashed #e6eaef;
+    border-radius: 12px;
+    background: linear-gradient(180deg, #fcfcfd, #f6f7f8);
+    overflow: hidden;
+  }
+
+  .mini-line svg,
+  .mini-bars svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .mini-modal {
+    margin-top: 12px;
+    border: 1px solid #d8dce3;
+    border-radius: 18px;
+    overflow: hidden;
+    background: #fff;
+  }
+
+  .mini-modal-head {
+    height: 44px;
+    border-bottom: 1px solid var(--line);
+    padding: 0 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .mini-modal-head .title {
+    width: 52px;
+    height: 10px;
+    border-radius: 999px;
+    background: #17191d;
+  }
+
+  .mini-modal-head .close {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    background: #cfd4db;
+  }
+
+  .mini-modal-body {
+    padding: 12px;
+    background: #fcfcfd;
+  }
+
+  .mini-section {
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: #fff;
+    padding: 10px;
+    margin-bottom: 8px;
+  }
+
+  .mini-section:last-child {
+    margin-bottom: 0;
+  }
+
+  .mini-section-title {
+    width: 52px;
+    height: 9px;
+    border-radius: 999px;
+    background: #17191d;
+    margin-bottom: 8px;
+  }
+
+  .mini-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .mini-field {
+    height: 30px;
+    border-radius: 9px;
+    border: 1px solid #d7dce4;
+    background: #fff;
+  }
+
+  .mini-field.focused {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+
+  .mini-field.full {
+    grid-column: 1 / -1;
+    height: 48px;
+  }
+
+  .tone {
+    margin-top: 12px;
+    font-size: 13px;
+    color: #5f6670;
+  }
+
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 9px;
+    border-radius: 999px;
+    border: 1px solid #dbe0e7;
+    background: #f8f9fb;
+    color: #5e6670;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  @media (max-width: 1160px) {
+    .other-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<h2>其他强调色</h2>
+<p class="subtitle">还是同一套干净后台骨架，只换掉强调色。这里给你三条不是刚才 A/B 的分支：墨绿、钢靛蓝、冷石青。</p>
+
+<div class="other-grid">
+  <div class="card other-card theme" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="palette">
+        <div class="swatch" style="background:#1d6a58;"></div>
+        <div class="swatch" style="background:#edf5f2;"></div>
+        <div class="swatch" style="background:#111317;"></div>
+      </div>
+      <div class="mini-shell">
+        <div class="mini-topbar">
+          <div class="mini-bread"></div>
+          <div class="mini-action"></div>
+        </div>
+        <div class="mini-layout">
+          <div class="mini-sidebar">
+            <div class="mini-logo"></div>
+            <div class="mini-nav active"></div>
+            <div class="mini-nav"></div>
+            <div class="mini-nav"></div>
+            <div class="mini-nav"></div>
+          </div>
+          <div class="mini-main">
+            <div class="mini-title"></div>
+            <div class="mini-sub"></div>
+            <div class="mini-stats">
+              <div class="mini-stat"><div class="k"></div><div class="v"></div><div class="d"></div></div>
+              <div class="mini-stat"><div class="k"></div><div class="v"></div><div class="d"></div></div>
+              <div class="mini-stat"><div class="k"></div><div class="v"></div><div class="d"></div></div>
+            </div>
+            <div class="mini-panels">
+              <div class="mini-panel">
+                <div class="mini-panel-head"><div class="l"></div><div class="r"></div></div>
+                <div class="mini-line">
+                  <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+                    <polyline fill="rgba(29,106,88,0.10)" stroke="none" points="0,78 12,72 24,74 36,62 48,60 60,64 72,54 84,49 100,39 100,100 0,100"></polyline>
+                    <polyline fill="none" stroke="#1d6a58" stroke-width="2.4" points="0,78 12,72 24,74 36,62 48,60 60,64 72,54 84,49 100,39"></polyline>
+                  </svg>
+                </div>
+              </div>
+              <div class="mini-panel">
+                <div class="mini-panel-head"><div class="l"></div><div class="r"></div></div>
+                <div class="mini-bars">
+                  <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+                    <rect x="6" y="58" width="8" height="32" rx="2" fill="#1d6a58" opacity="0.72"></rect>
+                    <rect x="18" y="44" width="8" height="46" rx="2" fill="#1d6a58" opacity="0.8"></rect>
+                    <rect x="30" y="61" width="8" height="29" rx="2" fill="#1d6a58" opacity="0.58"></rect>
+                    <rect x="42" y="50" width="8" height="40" rx="2" fill="#1d6a58" opacity="0.72"></rect>
+                    <rect x="54" y="34" width="8" height="56" rx="2" fill="#1d6a58" opacity="0.86"></rect>
+                    <rect x="66" y="22" width="8" height="68" rx="2" fill="#1d6a58" opacity="0.92"></rect>
+                    <rect x="78" y="31" width="8" height="59" rx="2" fill="#1d6a58" opacity="0.84"></rect>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="mini-modal">
+        <div class="mini-modal-head"><div class="title"></div><div class="close"></div></div>
+        <div class="mini-modal-body">
+          <div class="mini-section">
+            <div class="mini-section-title"></div>
+            <div class="mini-fields">
+              <div class="mini-field focused"></div>
+              <div class="mini-field"></div>
+              <div class="mini-field full"></div>
+              <div class="mini-field full"></div>
+            </div>
+          </div>
+          <div class="mini-section">
+            <div class="mini-section-title"></div>
+            <div class="mini-fields">
+              <div class="mini-field"></div>
+              <div class="mini-field"></div>
+              <div class="mini-field"></div>
+              <div class="mini-field"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="tag">C / 墨绿</div>
+      <h3 style="margin:12px 0 8px;">更企业，更稳定</h3>
+      <p>这种绿色不会“医疗化”或“环保化”，更像成熟企业产品里的控制色，稳、安静、耐看。</p>
+      <p class="tone">适合你想要专业感，但不想继续走蓝色路线。</p>
+    </div>
+  </div>
+
+  <div class="card other-card theme theme-d" data-choice="d" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="palette">
+        <div class="swatch" style="background:#4c648f;"></div>
+        <div class="swatch" style="background:#eef2f8;"></div>
+        <div class="swatch" style="background:#111317;"></div>
+      </div>
+      <div class="mini-shell">
+        <div class="mini-topbar">
+          <div class="mini-bread"></div>
+          <div class="mini-action"></div>
+        </div>
+        <div class="mini-layout">
+          <div class="mini-sidebar">
+            <div class="mini-logo"></div>
+            <div class="mini-nav active"></div>
+            <div class="mini-nav"></div>
+            <div class="mini-nav"></div>
+            <div class="mini-nav"></div>
+          </div>
+          <div class="mini-main">
+            <div class="mini-title"></div>
+            <div class="mini-sub"></div>
+            <div class="mini-stats">
+              <div class="mini-stat"><div class="k"></div><div class="v"></div><div class="d"></div></div>
+              <div class="mini-stat"><div class="k"></div><div class="v"></div><div class="d"></div></div>
+              <div class="mini-stat"><div class="k"></div><div class="v"></div><div class="d"></div></div>
+            </div>
+            <div class="mini-panels">
+              <div class="mini-panel">
+                <div class="mini-panel-head"><div class="l"></div><div class="r"></div></div>
+                <div class="mini-line">
+                  <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+                    <polyline fill="rgba(76,100,143,0.10)" stroke="none" points="0,78 12,72 24,74 36,62 48,60 60,64 72,54 84,49 100,39 100,100 0,100"></polyline>
+                    <polyline fill="none" stroke="#4c648f" stroke-width="2.4" points="0,78 12,72 24,74 36,62 48,60 60,64 72,54 84,49 100,39"></polyline>
+                  </svg>
+                </div>
+              </div>
+              <div class="mini-panel">
+                <div class="mini-panel-head"><div class="l"></div><div class="r"></div></div>
+                <div class="mini-bars">
+                  <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+                    <rect x="6" y="58" width="8" height="32" rx="2" fill="#4c648f" opacity="0.72"></rect>
+                    <rect x="18" y="44" width="8" height="46" rx="2" fill="#4c648f" opacity="0.8"></rect>
+                    <rect x="30" y="61" width="8" height="29" rx="2" fill="#4c648f" opacity="0.58"></rect>
+                    <rect x="42" y="50" width="8" height="40" rx="2" fill="#4c648f" opacity="0.72"></rect>
+                    <rect x="54" y="34" width="8" height="56" rx="2" fill="#4c648f" opacity="0.86"></rect>
+                    <rect x="66" y="22" width="8" height="68" rx="2" fill="#4c648f" opacity="0.92"></rect>
+                    <rect x="78" y="31" width="8" height="59" rx="2" fill="#4c648f" opacity="0.84"></rect>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="mini-modal">
+        <div class="mini-modal-head"><div class="title"></div><div class="close"></div></div>
+        <div class="mini-modal-body">
+          <div class="mini-section">
+            <div class="mini-section-title"></div>
+            <div class="mini-fields">
+              <div class="mini-field focused"></div>
+              <div class="mini-field"></div>
+              <div class="mini-field full"></div>
+              <div class="mini-field full"></div>
+            </div>
+          </div>
+          <div class="mini-section">
+            <div class="mini-section-title"></div>
+            <div class="mini-fields">
+              <div class="mini-field"></div>
+              <div class="mini-field"></div>
+              <div class="mini-field"></div>
+              <div class="mini-field"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="tag">D / 钢靛蓝</div>
+      <h3 style="margin:12px 0 8px;">更沉，更高级</h3>
+      <p>它比标准蓝更压住一点，既保留蓝系的产品感，又没那么像默认 SaaS 模板。</p>
+      <p class="tone">适合你还想留在蓝色家族里，但希望更稳、更有质感。</p>
+    </div>
+  </div>
+
+  <div class="card other-card theme theme-e" data-choice="e" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="palette">
+        <div class="swatch" style="background:#0f7b81;"></div>
+        <div class="swatch" style="background:#eaf5f6;"></div>
+        <div class="swatch" style="background:#111317;"></div>
+      </div>
+      <div class="mini-shell">
+        <div class="mini-topbar">
+          <div class="mini-bread"></div>
+          <div class="mini-action"></div>
+        </div>
+        <div class="mini-layout">
+          <div class="mini-sidebar">
+            <div class="mini-logo"></div>
+            <div class="mini-nav active"></div>
+            <div class="mini-nav"></div>
+            <div class="mini-nav"></div>
+            <div class="mini-nav"></div>
+          </div>
+          <div class="mini-main">
+            <div class="mini-title"></div>
+            <div class="mini-sub"></div>
+            <div class="mini-stats">
+              <div class="mini-stat"><div class="k"></div><div class="v"></div><div class="d"></div></div>
+              <div class="mini-stat"><div class="k"></div><div class="v"></div><div class="d"></div></div>
+              <div class="mini-stat"><div class="k"></div><div class="v"></div><div class="d"></div></div>
+            </div>
+            <div class="mini-panels">
+              <div class="mini-panel">
+                <div class="mini-panel-head"><div class="l"></div><div class="r"></div></div>
+                <div class="mini-line">
+                  <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+                    <polyline fill="rgba(15,123,129,0.10)" stroke="none" points="0,78 12,72 24,74 36,62 48,60 60,64 72,54 84,49 100,39 100,100 0,100"></polyline>
+                    <polyline fill="none" stroke="#0f7b81" stroke-width="2.4" points="0,78 12,72 24,74 36,62 48,60 60,64 72,54 84,49 100,39"></polyline>
+                  </svg>
+                </div>
+              </div>
+              <div class="mini-panel">
+                <div class="mini-panel-head"><div class="l"></div><div class="r"></div></div>
+                <div class="mini-bars">
+                  <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+                    <rect x="6" y="58" width="8" height="32" rx="2" fill="#0f7b81" opacity="0.72"></rect>
+                    <rect x="18" y="44" width="8" height="46" rx="2" fill="#0f7b81" opacity="0.8"></rect>
+                    <rect x="30" y="61" width="8" height="29" rx="2" fill="#0f7b81" opacity="0.58"></rect>
+                    <rect x="42" y="50" width="8" height="40" rx="2" fill="#0f7b81" opacity="0.72"></rect>
+                    <rect x="54" y="34" width="8" height="56" rx="2" fill="#0f7b81" opacity="0.86"></rect>
+                    <rect x="66" y="22" width="8" height="68" rx="2" fill="#0f7b81" opacity="0.92"></rect>
+                    <rect x="78" y="31" width="8" height="59" rx="2" fill="#0f7b81" opacity="0.84"></rect>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="mini-modal">
+        <div class="mini-modal-head"><div class="title"></div><div class="close"></div></div>
+        <div class="mini-modal-body">
+          <div class="mini-section">
+            <div class="mini-section-title"></div>
+            <div class="mini-fields">
+              <div class="mini-field focused"></div>
+              <div class="mini-field"></div>
+              <div class="mini-field full"></div>
+              <div class="mini-field full"></div>
+            </div>
+          </div>
+          <div class="mini-section">
+            <div class="mini-section-title"></div>
+            <div class="mini-fields">
+              <div class="mini-field"></div>
+              <div class="mini-field"></div>
+              <div class="mini-field"></div>
+              <div class="mini-field"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="tag">E / 冷石青</div>
+      <h3 style="margin:12px 0 8px;">更冷，更有设计感</h3>
+      <p>它比蓝色更轻一点、比绿色更现代一点，属于比较“产品设计团队会选”的颜色。</p>
+      <p class="tone">适合你想要现代感，但又不想太标准、太模板化。</p>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top:22px;">
+  <p><strong>我的建议：</strong>如果完全不想继续看蓝，先看 <strong>C 墨绿</strong>。如果还是接受冷色系，但想更高级，我更建议 <strong>D 钢靛蓝</strong> 或 <strong>E 冷石青</strong>。</p>
+</div>

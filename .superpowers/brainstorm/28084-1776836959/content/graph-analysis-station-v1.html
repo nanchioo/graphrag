@@ -1,0 +1,993 @@
+<style>
+  .ga-shell {
+    --bg: #eef2f6;
+    --panel: rgba(255,255,255,0.88);
+    --panel-strong: #ffffff;
+    --line: rgba(15, 23, 42, 0.09);
+    --line-strong: rgba(15, 23, 42, 0.16);
+    --text: #111827;k
+    --soft: #617084;
+    --faint: #8a95a5;
+    --accent: #0f8ea8;
+    --accent-bright: #27c2d9;
+    --accent-soft: rgba(15, 142, 168, 0.12);
+    --accent-mid: rgba(15, 142, 168, 0.22);
+    --shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 20px 48px rgba(15, 23, 42, 0.08);
+    color: var(--text);
+    font-family: "Aptos", "Segoe UI Variable", "PingFang SC", "Microsoft YaHei", sans-serif;
+  }
+
+  .ga-app {
+    min-height: 100vh;
+    background:
+      radial-gradient(circle at top left, rgba(39, 194, 217, 0.08), transparent 24%),
+      radial-gradient(circle at 80% 0, rgba(15, 142, 168, 0.07), transparent 28%),
+      linear-gradient(180deg, #f5f8fb 0%, #eef2f6 100%);
+    padding: 22px;
+  }
+
+  .ga-frame {
+    display: grid;
+    grid-template-columns: 88px minmax(0, 1fr);
+    border: 1px solid var(--line);
+    border-radius: 28px;
+    overflow: hidden;
+    background: rgba(255,255,255,0.56);
+    box-shadow: 0 24px 56px rgba(15, 23, 42, 0.06);
+    backdrop-filter: blur(20px);
+  }
+
+  .ga-rail {
+    border-right: 1px solid var(--line);
+    background: linear-gradient(180deg, rgba(255,255,255,0.82), rgba(247,250,252,0.66));
+    padding: 18px 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .ga-mark {
+    width: 42px;
+    height: 42px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #0d1622, #1f3143);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
+    position: relative;
+  }
+
+  .ga-mark::before,
+  .ga-mark::after {
+    content: "";
+    position: absolute;
+    border-radius: 999px;
+    background: linear-gradient(180deg, var(--accent-bright), var(--accent));
+  }
+
+  .ga-mark::before {
+    width: 8px;
+    height: 8px;
+    top: 10px;
+    left: 9px;
+    box-shadow: 15px 9px 0 0 var(--accent-bright), 4px 18px 0 0 var(--accent);
+  }
+
+  .ga-mark::after {
+    width: 20px;
+    height: 2px;
+    top: 16px;
+    left: 11px;
+    transform: rotate(28deg);
+    box-shadow: -3px 11px 0 0 rgba(39, 194, 217, 0.9);
+  }
+
+  .ga-rail-dot,
+  .ga-rail-pill {
+    background: rgba(255,255,255,0.78);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.5);
+  }
+
+  .ga-rail-dot {
+    width: 42px;
+    height: 42px;
+    position: relative;
+  }
+
+  .ga-rail-dot.active {
+    background: linear-gradient(180deg, rgba(15, 142, 168, 0.16), rgba(15, 142, 168, 0.08));
+    border-color: var(--accent-mid);
+  }
+
+  .ga-rail-dot.active::after {
+    content: "";
+    position: absolute;
+    inset: 11px;
+    border-radius: 10px;
+    background: linear-gradient(180deg, var(--accent-bright), var(--accent));
+  }
+
+  .ga-rail-pill {
+    width: 42px;
+    height: 86px;
+  }
+
+  .ga-main {
+    min-width: 0;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .ga-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 8px 8px 0;
+  }
+
+  .ga-bread {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--faint);
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .ga-bread strong {
+    color: var(--text);
+    font-weight: 800;
+  }
+
+  .ga-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .ga-search,
+  .ga-btn,
+  .ga-icon {
+    height: 42px;
+    border-radius: 14px;
+    border: 1px solid var(--line);
+    background: rgba(255,255,255,0.82);
+    color: var(--soft);
+  }
+
+  .ga-search {
+    width: 300px;
+    display: flex;
+    align-items: center;
+    padding: 0 14px;
+    font-size: 14px;
+  }
+
+  .ga-search::before {
+    content: "⌕";
+    margin-right: 10px;
+    color: var(--faint);
+  }
+
+  .ga-btn,
+  .ga-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+  }
+
+  .ga-icon {
+    width: 42px;
+  }
+
+  .ga-btn.primary {
+    padding: 0 16px;
+    background: linear-gradient(135deg, #112033, #1d3446);
+    border-color: rgba(13, 22, 34, 0.8);
+    color: #fff;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06);
+  }
+
+  .ga-hero {
+    display: grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: 18px;
+  }
+
+  .ga-hero-card,
+  .ga-panel,
+  .ga-table-card {
+    border: 1px solid var(--line);
+    border-radius: 24px;
+    background: var(--panel);
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(18px);
+  }
+
+  .ga-hero-card {
+    padding: 22px;
+    min-height: 254px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .ga-hero-card::before {
+    content: "";
+    position: absolute;
+    inset: -30% auto auto -12%;
+    width: 240px;
+    height: 240px;
+    border-radius: 999px;
+    background: radial-gradient(circle, rgba(39, 194, 217, 0.18), transparent 68%);
+    pointer-events: none;
+  }
+
+  .ga-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--accent-mid);
+    background: rgba(255,255,255,0.58);
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    width: fit-content;
+  }
+
+  .ga-kicker::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: linear-gradient(180deg, var(--accent-bright), var(--accent));
+    box-shadow: 0 0 0 5px rgba(15, 142, 168, 0.12);
+  }
+
+  .ga-hero-card h1 {
+    margin: 16px 0 12px;
+    font-size: 42px;
+    line-height: 0.94;
+    letter-spacing: -0.06em;
+    max-width: 560px;
+  }
+
+  .ga-hero-card p {
+    margin: 0;
+    color: var(--soft);
+    font-size: 15px;
+    max-width: 530px;
+  }
+
+  .ga-hero-metrics {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 20px;
+  }
+
+  .ga-metric {
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    background: rgba(255,255,255,0.72);
+    padding: 14px;
+  }
+
+  .ga-metric .label {
+    font-size: 12px;
+    color: var(--faint);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .ga-metric .value {
+    margin-top: 8px;
+    font-size: 30px;
+    line-height: 1;
+    letter-spacing: -0.06em;
+    font-weight: 900;
+  }
+
+  .ga-metric .delta {
+    margin-top: 10px;
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .ga-network-card {
+    padding: 18px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .ga-network-header {
+    display: flex;
+    align-items: start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 12px;
+  }
+
+  .ga-network-header h3,
+  .ga-panel h3,
+  .ga-table-head h3 {
+    margin: 0;
+    font-size: 18px;
+    letter-spacing: -0.03em;
+  }
+
+  .ga-network-header p,
+  .ga-panel .sub,
+  .ga-table-head p {
+    margin: 6px 0 0;
+    font-size: 13px;
+    color: var(--soft);
+  }
+
+  .ga-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 11px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: rgba(255,255,255,0.74);
+    color: var(--soft);
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .ga-chip.accent {
+    border-color: var(--accent-mid);
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
+
+  .ga-network {
+    height: 206px;
+    border: 1px solid rgba(15, 23, 42, 0.06);
+    border-radius: 18px;
+    background:
+      radial-gradient(circle at center, rgba(39, 194, 217, 0.08), transparent 46%),
+      linear-gradient(180deg, rgba(255,255,255,0.8), rgba(244,247,250,0.95));
+    position: relative;
+    overflow: hidden;
+  }
+
+  .ga-network svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .ga-grid {
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 18px;
+  }
+
+  .ga-left-stack,
+  .ga-right-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .ga-panel {
+    padding: 18px;
+  }
+
+  .ga-panel-head {
+    display: flex;
+    align-items: start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 14px;
+  }
+
+  .ga-linechart,
+  .ga-bars {
+    height: 180px;
+    border-radius: 18px;
+    border: 1px dashed rgba(15, 23, 42, 0.1);
+    background: linear-gradient(180deg, rgba(255,255,255,0.84), rgba(246,248,250,0.94));
+    position: relative;
+    overflow: hidden;
+  }
+
+  .ga-linechart svg,
+  .ga-bars svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .ga-statbar {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 14px;
+  }
+
+  .ga-statbox {
+    padding: 12px;
+    border-radius: 16px;
+    border: 1px solid var(--line);
+    background: rgba(255,255,255,0.76);
+  }
+
+  .ga-statbox .k {
+    font-size: 12px;
+    color: var(--faint);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .ga-statbox .v {
+    margin-top: 6px;
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+  }
+
+  .ga-health {
+    display: grid;
+    gap: 12px;
+  }
+
+  .ga-health-item {
+    padding: 14px 15px;
+    border-radius: 16px;
+    border: 1px solid var(--line);
+    background: rgba(255,255,255,0.78);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .ga-health-item strong {
+    display: block;
+    font-size: 14px;
+  }
+
+  .ga-health-item span {
+    display: block;
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--soft);
+  }
+
+  .ga-status {
+    padding: 7px 10px;
+    border-radius: 999px;
+    background: var(--accent-soft);
+    border: 1px solid var(--accent-mid);
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  .ga-table-card {
+    overflow: hidden;
+  }
+
+  .ga-table-head {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--line);
+    background: rgba(255,255,255,0.74);
+  }
+
+  .ga-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .ga-table th,
+  .ga-table td {
+    padding: 15px 20px;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+    text-align: left;
+  }
+
+  .ga-table th {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--faint);
+  }
+
+  .ga-table td {
+    font-size: 14px;
+  }
+
+  .ga-progress {
+    width: 126px;
+    height: 9px;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.08);
+    overflow: hidden;
+  }
+
+  .ga-progress > span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--accent), var(--accent-bright));
+  }
+
+  .ga-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(11, 16, 24, 0.24);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 28px;
+  }
+
+  .ga-modal {
+    width: min(980px, 100%);
+    border-radius: 26px;
+    border: 1px solid rgba(15, 23, 42, 0.14);
+    background: rgba(248,251,253,0.94);
+    box-shadow: 0 24px 80px rgba(11, 16, 24, 0.16);
+    overflow: hidden;
+  }
+
+  .ga-modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 20px 24px;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+    background: rgba(255,255,255,0.72);
+  }
+
+  .ga-modal-head strong {
+    font-size: 24px;
+    letter-spacing: -0.05em;
+  }
+
+  .ga-modal-head .sub {
+    margin-top: 6px;
+    color: var(--soft);
+    font-size: 13px;
+  }
+
+  .ga-modal-body {
+    padding: 22px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .ga-modal-section {
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    border-radius: 20px;
+    background: rgba(255,255,255,0.82);
+    padding: 18px;
+  }
+
+  .ga-modal-section h4 {
+    margin: 0;
+    font-size: 15px;
+    letter-spacing: -0.02em;
+  }
+
+  .ga-modal-section p {
+    margin: 6px 0 0;
+    color: var(--soft);
+    font-size: 13px;
+  }
+
+  .ga-form {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px 16px;
+    margin-top: 16px;
+  }
+
+  .ga-field.full {
+    grid-column: 1 / -1;
+  }
+
+  .ga-label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .ga-input,
+  .ga-textarea {
+    width: 100%;
+    border-radius: 12px;
+    border: 1px solid rgba(15, 23, 42, 0.12);
+    background: rgba(255,255,255,0.92);
+    padding: 12px 13px;
+    color: var(--text);
+    font-size: 14px;
+  }
+
+  .ga-input.focused {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px rgba(15, 142, 168, 0.12);
+    background: #fff;
+  }
+
+  .ga-textarea {
+    min-height: 92px;
+    resize: none;
+  }
+
+  .ga-hint {
+    margin-top: 8px;
+    color: var(--faint);
+    font-size: 12px;
+  }
+
+  .ga-modal-foot {
+    display: flex;
+    justify-content: end;
+    gap: 10px;
+    padding: 0 24px 24px;
+  }
+
+  @media (max-width: 1180px) {
+    .ga-hero,
+    .ga-grid,
+    .ga-form {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 900px) {
+    .ga-frame {
+      grid-template-columns: 1fr;
+    }
+
+    .ga-rail {
+      display: none;
+    }
+
+    .ga-topbar {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .ga-actions {
+      flex-wrap: wrap;
+    }
+
+    .ga-search {
+      width: 100%;
+    }
+
+    .ga-hero-metrics,
+    .ga-statbar {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<div class="ga-shell">
+  <div class="ga-app">
+    <div class="ga-frame">
+      <aside class="ga-rail">
+        <div class="ga-mark"></div>
+        <div class="ga-rail-dot active"></div>
+        <div class="ga-rail-dot"></div>
+        <div class="ga-rail-dot"></div>
+        <div class="ga-rail-pill"></div>
+      </aside>
+
+      <main class="ga-main">
+        <div class="ga-topbar">
+          <div class="ga-bread">
+            <strong>Knowledge Graph</strong>
+            <span>/</span>
+            <span>Analysis Station</span>
+          </div>
+          <div class="ga-actions">
+            <div class="ga-search">搜索图谱、实体、关系、任务...</div>
+            <div class="ga-icon">⌘K</div>
+            <div class="ga-icon">◫</div>
+            <div class="ga-btn primary">+ 新建图谱</div>
+          </div>
+        </div>
+
+        <section class="ga-hero">
+          <div class="ga-hero-card">
+            <div>
+              <div class="ga-kicker">Knowledge Graph Operating Layer</div>
+              <h1>更像分析台，而不是普通后台。</h1>
+              <p>这版不靠大面积颜色堆砌，而是用更强的层级、更冷的细节、更明确的图谱语义，把界面从“管理页面”拉到“知识结构工作台”。</p>
+            </div>
+
+            <div class="ga-hero-metrics">
+              <div class="ga-metric">
+                <div class="label">Graphs Online</div>
+                <div class="value">12</div>
+                <div class="delta">+2 本月</div>
+              </div>
+              <div class="ga-metric">
+                <div class="label">Entity Volume</div>
+                <div class="value">248K</div>
+                <div class="delta">结构覆盖率 92%</div>
+              </div>
+              <div class="ga-metric">
+                <div class="label">Relations</div>
+                <div class="value">612K</div>
+                <div class="delta">关系图谱已刷新</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="ga-hero-card ga-network-card">
+            <div class="ga-network-header">
+              <div>
+                <h3>图谱脉冲</h3>
+                <p>右上角不是装饰图，而是直接把“关系网络”做成视觉主角。</p>
+              </div>
+              <div class="ga-chip accent">Live topology</div>
+            </div>
+
+            <div class="ga-network">
+              <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="edge" x1="0" x2="1">
+                    <stop offset="0%" stop-color="rgba(39,194,217,0.18)"/>
+                    <stop offset="100%" stop-color="rgba(15,142,168,0.58)"/>
+                  </linearGradient>
+                  <linearGradient id="node" x1="0" x2="1">
+                    <stop offset="0%" stop-color="#27c2d9"/>
+                    <stop offset="100%" stop-color="#0f8ea8"/>
+                  </linearGradient>
+                </defs>
+                <path d="M18 68 L34 44 L52 54 L67 34 L82 48" stroke="url(#edge)" stroke-width="1.4" fill="none"/>
+                <path d="M22 28 L34 44 L48 24 L67 34 L84 19" stroke="url(#edge)" stroke-width="1.2" fill="none"/>
+                <path d="M18 68 L39 79 L60 71 L82 48" stroke="url(#edge)" stroke-width="1.2" fill="none"/>
+                <path d="M52 54 L60 71 L74 81" stroke="url(#edge)" stroke-width="1.1" fill="none"/>
+                <circle cx="18" cy="68" r="3.1" fill="url(#node)"/>
+                <circle cx="34" cy="44" r="4.1" fill="#101722"/>
+                <circle cx="52" cy="54" r="5.4" fill="url(#node)"/>
+                <circle cx="67" cy="34" r="4.2" fill="#101722"/>
+                <circle cx="82" cy="48" r="4.7" fill="url(#node)"/>
+                <circle cx="22" cy="28" r="2.6" fill="#101722"/>
+                <circle cx="48" cy="24" r="3.2" fill="url(#node)"/>
+                <circle cx="84" cy="19" r="2.5" fill="#101722"/>
+                <circle cx="39" cy="79" r="2.5" fill="#101722"/>
+                <circle cx="60" cy="71" r="3.2" fill="url(#node)"/>
+                <circle cx="74" cy="81" r="2.6" fill="#101722"/>
+              </svg>
+            </div>
+          </div>
+        </section>
+
+        <section class="ga-grid">
+          <div class="ga-left-stack">
+            <div class="ga-panel">
+              <div class="ga-panel-head">
+                <div>
+                  <h3>实体增长轨迹</h3>
+                  <div class="sub">图表保持克制，但比前几版更有节奏感和工具气质。</div>
+                </div>
+                <div class="ga-chip">14 Days</div>
+              </div>
+              <div class="ga-linechart">
+                <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+                  <polyline fill="rgba(15,142,168,0.10)" stroke="none" points="0,82 10,76 20,78 30,66 40,60 50,63 60,51 70,46 80,41 90,30 100,24 100,100 0,100"></polyline>
+                  <polyline fill="none" stroke="#0f8ea8" stroke-width="2.3" points="0,82 10,76 20,78 30,66 40,60 50,63 60,51 70,46 80,41 90,30 100,24"></polyline>
+                </svg>
+              </div>
+              <div class="ga-statbar">
+                <div class="ga-statbox">
+                  <div class="k">新增实体</div>
+                  <div class="v">3.2K</div>
+                </div>
+                <div class="ga-statbox">
+                  <div class="k">新增社区</div>
+                  <div class="v">18</div>
+                </div>
+                <div class="ga-statbox">
+                  <div class="k">刷新节点</div>
+                  <div class="v">81%</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="ga-table-card">
+              <div class="ga-table-head">
+                <div>
+                  <h3>运行中的图谱任务</h3>
+                  <p>这里不再是“普通表格”，而是更靠近分析台的任务流视图。</p>
+                </div>
+                <div class="ga-chip accent">Pipeline live</div>
+              </div>
+              <table class="ga-table">
+                <thead>
+                  <tr>
+                    <th>图谱</th>
+                    <th>阶段</th>
+                    <th>进度</th>
+                    <th>耗时</th>
+                    <th>状态</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>customer-service-kg</strong></td>
+                    <td>GenerateReports</td>
+                    <td><div class="ga-progress"><span style="width:82%;"></span></div></td>
+                    <td>12m 04s</td>
+                    <td><span class="ga-chip accent">运行中</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>finance-report-2024</strong></td>
+                    <td>ExtractGraph</td>
+                    <td><div class="ga-progress"><span style="width:100%;"></span></div></td>
+                    <td>41m 22s</td>
+                    <td><span class="ga-chip">完成</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>medical-papers-q2</strong></td>
+                    <td>Embedding</td>
+                    <td><div class="ga-progress"><span style="width:64%;"></span></div></td>
+                    <td>08m 39s</td>
+                    <td><span class="ga-chip accent">处理中</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="ga-right-stack">
+            <div class="ga-panel">
+              <div class="ga-panel-head">
+                <div>
+                  <h3>Token 消耗热度</h3>
+                  <div class="sub">用细冷色强调，而不是做满屏彩条。</div>
+                </div>
+                <div class="ga-chip">Real-time</div>
+              </div>
+              <div class="ga-bars">
+                <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+                  <rect x="6" y="62" width="6" height="28" rx="2" fill="#0f8ea8" opacity="0.46"/>
+                  <rect x="15" y="50" width="6" height="40" rx="2" fill="#0f8ea8" opacity="0.54"/>
+                  <rect x="24" y="66" width="6" height="24" rx="2" fill="#0f8ea8" opacity="0.4"/>
+                  <rect x="33" y="56" width="6" height="34" rx="2" fill="#0f8ea8" opacity="0.48"/>
+                  <rect x="42" y="38" width="6" height="52" rx="2" fill="#0f8ea8" opacity="0.64"/>
+                  <rect x="51" y="30" width="6" height="60" rx="2" fill="#0f8ea8" opacity="0.76"/>
+                  <rect x="60" y="22" width="6" height="68" rx="2" fill="#0f8ea8" opacity="0.92"/>
+                  <rect x="69" y="28" width="6" height="62" rx="2" fill="#0f8ea8" opacity="0.82"/>
+                  <rect x="78" y="18" width="6" height="72" rx="2" fill="#27c2d9" opacity="0.96"/>
+                  <rect x="87" y="35" width="6" height="55" rx="2" fill="#0f8ea8" opacity="0.72"/>
+                </svg>
+              </div>
+            </div>
+
+            <div class="ga-panel">
+              <div class="ga-panel-head">
+                <div>
+                  <h3>系统健康度</h3>
+                  <div class="sub">状态区应该看起来像控制台，不是普通设置面板。</div>
+                </div>
+              </div>
+              <div class="ga-health">
+                <div class="ga-health-item">
+                  <div>
+                    <strong>构建队列</strong>
+                    <span>3 个任务排队，吞吐稳定</span>
+                  </div>
+                  <div class="ga-status">正常</div>
+                </div>
+                <div class="ga-health-item">
+                  <div>
+                    <strong>Dify 对接</strong>
+                    <span>Endpoint 正常，上次同步 2 分钟前</span>
+                  </div>
+                  <div class="ga-status">已连接</div>
+                </div>
+                <div class="ga-health-item">
+                  <div>
+                    <strong>索引刷新</strong>
+                    <span>最近一次产物更新于 10:42</span>
+                  </div>
+                  <div class="ga-status">最新</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div class="ga-modal-backdrop">
+      <div class="ga-modal">
+        <div class="ga-modal-head">
+          <div>
+            <strong>新建图谱</strong>
+            <div class="sub">弹窗也沿用分析台语言：更冷、更清晰、更有工具感。</div>
+          </div>
+          <div class="ga-chip">Prototype</div>
+        </div>
+
+        <div class="ga-modal-body">
+          <div class="ga-modal-section">
+            <h4>基础信息</h4>
+            <p>输入区不再是平铺后台表单，而是更像参数面板。</p>
+            <div class="ga-form">
+              <div class="ga-field">
+                <label class="ga-label">名称</label>
+                <input class="ga-input focused" value="customer-service-kg">
+              </div>
+              <div class="ga-field">
+                <label class="ga-label">绑定模型配置</label>
+                <input class="ga-input" value="OpenAI / Default Profile">
+              </div>
+              <div class="ga-field full">
+                <label class="ga-label">描述</label>
+                <textarea class="ga-textarea">用于客服知识库、问答链路与图谱关系分析的图谱项目。</textarea>
+              </div>
+              <div class="ga-field full">
+                <label class="ga-label">保存位置</label>
+                <input class="ga-input" value="data/projects">
+                <div class="ga-hint">最终目录将自动生成为 &lt;保存位置&gt; / &lt;图谱ID&gt;</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="ga-modal-section">
+            <h4>切片配置</h4>
+            <p>参数区可以更像“图谱构建配置”，而不是普通新增表单。</p>
+            <div class="ga-form">
+              <div class="ga-field">
+                <label class="ga-label">切片方式</label>
+                <input class="ga-input" value="tokens">
+              </div>
+              <div class="ga-field">
+                <label class="ga-label">编码模型</label>
+                <input class="ga-input" value="o200k_base">
+              </div>
+              <div class="ga-field">
+                <label class="ga-label">切片大小</label>
+                <input class="ga-input" value="1200">
+              </div>
+              <div class="ga-field">
+                <label class="ga-label">重叠大小</label>
+                <input class="ga-input" value="100">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ga-modal-foot">
+          <div class="ga-btn">取消</div>
+          <div class="ga-btn primary">创建图谱</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

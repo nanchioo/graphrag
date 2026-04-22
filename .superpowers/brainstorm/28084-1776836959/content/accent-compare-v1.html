@@ -1,0 +1,510 @@
+<style>
+  .accent-cards {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 22px;
+  }
+
+  .accent-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 20px;
+    background: #fff;
+    overflow: hidden;
+    box-shadow: 0 14px 30px rgba(17, 19, 23, 0.05);
+  }
+
+  .accent-card .card-image {
+    padding: 18px;
+    background: linear-gradient(180deg, #fbfbfc 0%, #f4f5f7 100%);
+  }
+
+  .accent-card .card-body {
+    padding: 18px 18px 20px;
+  }
+
+  .theme {
+    --bg: #f3f4f6;
+    --panel: #ffffff;
+    --line: #e5e7eb;
+    --text: #111317;
+    --soft: #69707a;
+    --accent: #2563eb;
+    --accent-soft: rgba(37, 99, 235, 0.10);
+    --accent-mid: rgba(37, 99, 235, 0.18);
+  }
+
+  .theme-b {
+    --accent: #0f8ea8;
+    --accent-soft: rgba(15, 142, 168, 0.10);
+    --accent-mid: rgba(15, 142, 168, 0.18);
+  }
+
+  .mock-shell {
+    border: 1px solid #dde1e7;
+    border-radius: 18px;
+    overflow: hidden;
+    background: var(--bg);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.55);
+  }
+
+  .mock-topbar {
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 14px;
+    background: rgba(255,255,255,0.88);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .mock-bread {
+    font-size: 11px;
+    color: #8a919a;
+  }
+
+  .mock-search {
+    width: 136px;
+    height: 28px;
+    border-radius: 9px;
+    border: 1px solid #d9dee6;
+    background: #fff;
+  }
+
+  .mock-layout {
+    display: grid;
+    grid-template-columns: 92px minmax(0, 1fr);
+    min-height: 240px;
+  }
+
+  .mock-sidebar {
+    background: rgba(255,255,255,0.92);
+    border-right: 1px solid var(--line);
+    padding: 10px 8px;
+  }
+
+  .mock-logo {
+    height: 28px;
+    border-radius: 9px;
+    background: #16191d;
+    margin-bottom: 10px;
+  }
+
+  .mock-nav {
+    height: 26px;
+    border-radius: 8px;
+    margin-bottom: 6px;
+    background: transparent;
+    border: 1px solid transparent;
+  }
+
+  .mock-nav.active {
+    background: var(--accent-soft);
+    border-color: var(--accent-mid);
+  }
+
+  .mock-main {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .mock-title {
+    height: 14px;
+    width: 94px;
+    border-radius: 999px;
+    background: #1a1d22;
+  }
+
+  .mock-subtitle {
+    height: 9px;
+    width: 160px;
+    border-radius: 999px;
+    background: #d9dde2;
+  }
+
+  .mock-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  .mock-stat {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--panel);
+    padding: 10px;
+  }
+
+  .mock-stat .kicker {
+    height: 8px;
+    width: 40px;
+    background: #cbd1d8;
+    border-radius: 999px;
+    margin-bottom: 8px;
+  }
+
+  .mock-stat .value {
+    height: 16px;
+    width: 56px;
+    background: #16191d;
+    border-radius: 999px;
+    margin-bottom: 8px;
+  }
+
+  .mock-stat .delta {
+    height: 8px;
+    width: 34px;
+    background: var(--accent);
+    border-radius: 999px;
+    opacity: 0.9;
+  }
+
+  .mock-panels {
+    display: grid;
+    grid-template-columns: 1.35fr 1fr;
+    gap: 8px;
+  }
+
+  .mock-panel {
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--panel);
+    padding: 10px;
+  }
+
+  .mock-panel .head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .mock-panel .head .left {
+    height: 10px;
+    width: 70px;
+    background: #16191d;
+    border-radius: 999px;
+  }
+
+  .mock-panel .head .right {
+    height: 18px;
+    width: 34px;
+    border-radius: 999px;
+    background: var(--accent-soft);
+    border: 1px solid var(--accent-mid);
+  }
+
+  .mock-line {
+    position: relative;
+    height: 78px;
+    border-radius: 12px;
+    background: linear-gradient(180deg, #fcfcfd, #f6f7f8);
+    border: 1px dashed #e7eaef;
+    overflow: hidden;
+  }
+
+  .mock-line svg,
+  .mock-bars svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .mock-bars {
+    position: relative;
+    height: 78px;
+    border-radius: 12px;
+    background: linear-gradient(180deg, #fcfcfd, #f6f7f8);
+    border: 1px dashed #e7eaef;
+    overflow: hidden;
+  }
+
+  .mock-modal {
+    margin-top: 12px;
+    border: 1px solid #d8dce3;
+    border-radius: 18px;
+    background: #fff;
+    overflow: hidden;
+    box-shadow: 0 16px 34px rgba(17, 19, 23, 0.08);
+  }
+
+  .mock-modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .mock-modal-head .title {
+    height: 12px;
+    width: 58px;
+    background: #16191d;
+    border-radius: 999px;
+  }
+
+  .mock-modal-head .close {
+    height: 12px;
+    width: 12px;
+    border-radius: 999px;
+    background: #cdd2d9;
+  }
+
+  .mock-modal-body {
+    padding: 14px;
+    background: #fcfcfd;
+  }
+
+  .mock-section {
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: #fff;
+    padding: 12px;
+    margin-bottom: 10px;
+  }
+
+  .mock-section:last-child {
+    margin-bottom: 0;
+  }
+
+  .mock-section .section-title {
+    height: 10px;
+    width: 56px;
+    border-radius: 999px;
+    background: #16191d;
+    margin-bottom: 10px;
+  }
+
+  .mock-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .mock-field {
+    height: 32px;
+    border: 1px solid #d7dce4;
+    border-radius: 9px;
+    background: #fff;
+  }
+
+  .mock-field.focused {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+
+  .mock-field.full {
+    grid-column: 1 / -1;
+    height: 52px;
+  }
+
+  .tone-note {
+    margin-top: 12px;
+    font-size: 13px;
+    color: #5f6670;
+  }
+
+  .tag-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 9px;
+    border-radius: 999px;
+    border: 1px solid #dbe0e7;
+    background: #f8f9fb;
+    color: #5e6670;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  @media (max-width: 980px) {
+    .accent-cards {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<h2>蓝色强调对比</h2>
+<p class="subtitle">骨架保持不变，只替换交互强调色。你现在看的差异主要集中在选中态、按钮、图表主线、输入焦点和轻量标签。</p>
+
+<div class="accent-cards">
+  <div class="card accent-card theme" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mock-shell">
+        <div class="mock-topbar">
+          <div class="mock-bread">图谱管理 / 新建图谱</div>
+          <div class="mock-search"></div>
+        </div>
+        <div class="mock-layout">
+          <div class="mock-sidebar">
+            <div class="mock-logo"></div>
+            <div class="mock-nav active"></div>
+            <div class="mock-nav"></div>
+            <div class="mock-nav"></div>
+            <div class="mock-nav"></div>
+          </div>
+          <div class="mock-main">
+            <div class="mock-title"></div>
+            <div class="mock-subtitle"></div>
+            <div class="mock-stats">
+              <div class="mock-stat"><div class="kicker"></div><div class="value"></div><div class="delta"></div></div>
+              <div class="mock-stat"><div class="kicker"></div><div class="value"></div><div class="delta"></div></div>
+              <div class="mock-stat"><div class="kicker"></div><div class="value"></div><div class="delta"></div></div>
+            </div>
+            <div class="mock-panels">
+              <div class="mock-panel">
+                <div class="head"><div class="left"></div><div class="right"></div></div>
+                <div class="mock-line">
+                  <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+                    <polyline fill="rgba(37,99,235,0.10)" stroke="none" points="0,78 12,74 24,76 36,64 48,61 60,66 72,55 84,49 100,37 100,100 0,100"></polyline>
+                    <polyline fill="none" stroke="#2563eb" stroke-width="2.4" points="0,78 12,74 24,76 36,64 48,61 60,66 72,55 84,49 100,37"></polyline>
+                  </svg>
+                </div>
+              </div>
+              <div class="mock-panel">
+                <div class="head"><div class="left"></div><div class="right"></div></div>
+                <div class="mock-bars">
+                  <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+                    <rect x="6" y="58" width="8" height="32" rx="2" fill="#2563eb" opacity="0.72"></rect>
+                    <rect x="18" y="44" width="8" height="46" rx="2" fill="#2563eb" opacity="0.8"></rect>
+                    <rect x="30" y="61" width="8" height="29" rx="2" fill="#2563eb" opacity="0.58"></rect>
+                    <rect x="42" y="50" width="8" height="40" rx="2" fill="#2563eb" opacity="0.72"></rect>
+                    <rect x="54" y="34" width="8" height="56" rx="2" fill="#2563eb" opacity="0.86"></rect>
+                    <rect x="66" y="22" width="8" height="68" rx="2" fill="#2563eb" opacity="0.92"></rect>
+                    <rect x="78" y="31" width="8" height="59" rx="2" fill="#2563eb" opacity="0.84"></rect>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mock-modal">
+        <div class="mock-modal-head">
+          <div class="title"></div>
+          <div class="close"></div>
+        </div>
+        <div class="mock-modal-body">
+          <div class="mock-section">
+            <div class="section-title"></div>
+            <div class="mock-fields">
+              <div class="mock-field focused"></div>
+              <div class="mock-field"></div>
+              <div class="mock-field full"></div>
+              <div class="mock-field full"></div>
+            </div>
+          </div>
+          <div class="mock-section">
+            <div class="section-title"></div>
+            <div class="mock-fields">
+              <div class="mock-field"></div>
+              <div class="mock-field"></div>
+              <div class="mock-field"></div>
+              <div class="mock-field"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="tag-inline">A / 标准 SaaS 蓝</div>
+      <h3 style="margin:12px 0 8px;">更稳，更像成熟管理后台</h3>
+      <p>蓝色更常规，用户认知成本最低。焦点态、主按钮、统计图都更像典型 B2B SaaS。</p>
+      <p class="tone-note">适合：你想要“看起来就是专业后台”，而不是追求特别强的风格辨识度。</p>
+    </div>
+  </div>
+
+  <div class="card accent-card theme theme-b" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mock-shell">
+        <div class="mock-topbar">
+          <div class="mock-bread">图谱管理 / 新建图谱</div>
+          <div class="mock-search"></div>
+        </div>
+        <div class="mock-layout">
+          <div class="mock-sidebar">
+            <div class="mock-logo"></div>
+            <div class="mock-nav active"></div>
+            <div class="mock-nav"></div>
+            <div class="mock-nav"></div>
+            <div class="mock-nav"></div>
+          </div>
+          <div class="mock-main">
+            <div class="mock-title"></div>
+            <div class="mock-subtitle"></div>
+            <div class="mock-stats">
+              <div class="mock-stat"><div class="kicker"></div><div class="value"></div><div class="delta"></div></div>
+              <div class="mock-stat"><div class="kicker"></div><div class="value"></div><div class="delta"></div></div>
+              <div class="mock-stat"><div class="kicker"></div><div class="value"></div><div class="delta"></div></div>
+            </div>
+            <div class="mock-panels">
+              <div class="mock-panel">
+                <div class="head"><div class="left"></div><div class="right"></div></div>
+                <div class="mock-line">
+                  <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+                    <polyline fill="rgba(15,142,168,0.10)" stroke="none" points="0,78 12,74 24,76 36,64 48,61 60,66 72,55 84,49 100,37 100,100 0,100"></polyline>
+                    <polyline fill="none" stroke="#0f8ea8" stroke-width="2.4" points="0,78 12,74 24,76 36,64 48,61 60,66 72,55 84,49 100,37"></polyline>
+                  </svg>
+                </div>
+              </div>
+              <div class="mock-panel">
+                <div class="head"><div class="left"></div><div class="right"></div></div>
+                <div class="mock-bars">
+                  <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+                    <rect x="6" y="58" width="8" height="32" rx="2" fill="#0f8ea8" opacity="0.72"></rect>
+                    <rect x="18" y="44" width="8" height="46" rx="2" fill="#0f8ea8" opacity="0.8"></rect>
+                    <rect x="30" y="61" width="8" height="29" rx="2" fill="#0f8ea8" opacity="0.58"></rect>
+                    <rect x="42" y="50" width="8" height="40" rx="2" fill="#0f8ea8" opacity="0.72"></rect>
+                    <rect x="54" y="34" width="8" height="56" rx="2" fill="#0f8ea8" opacity="0.86"></rect>
+                    <rect x="66" y="22" width="8" height="68" rx="2" fill="#0f8ea8" opacity="0.92"></rect>
+                    <rect x="78" y="31" width="8" height="59" rx="2" fill="#0f8ea8" opacity="0.84"></rect>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mock-modal">
+        <div class="mock-modal-head">
+          <div class="title"></div>
+          <div class="close"></div>
+        </div>
+        <div class="mock-modal-body">
+          <div class="mock-section">
+            <div class="section-title"></div>
+            <div class="mock-fields">
+              <div class="mock-field focused"></div>
+              <div class="mock-field"></div>
+              <div class="mock-field full"></div>
+              <div class="mock-field full"></div>
+            </div>
+          </div>
+          <div class="mock-section">
+            <div class="section-title"></div>
+            <div class="mock-fields">
+              <div class="mock-field"></div>
+              <div class="mock-field"></div>
+              <div class="mock-field"></div>
+              <div class="mock-field"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="tag-inline">B / 更冷的青蓝</div>
+      <h3 style="margin:12px 0 8px;">更现代，更克制</h3>
+      <p>青蓝比传统蓝更冷静，和黑白灰骨架更搭，界面会少一点“互联网运营后台感”，多一点产品设计感。</p>
+      <p class="tone-note">适合：你要标准 SaaS 的干净感，但不想太像默认模板。</p>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top:22px;">
+  <p><strong>我的建议：</strong>如果你要绝对稳妥，选 <strong>A</strong>。如果你要“还是蓝系，但更冷、更高级一点”，选 <strong>B</strong>。按你前面给我的反馈，我倾向 <strong>B</strong>。</p>
+</div>

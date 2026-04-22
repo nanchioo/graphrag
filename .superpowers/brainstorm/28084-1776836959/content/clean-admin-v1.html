@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GraphRAG Clean Admin Mockup</title>
+  <style>
+    :root {
+      --bg: #f3f4f6;
+      --panel: #ffffff;
+      --panel-soft: #fafafb;
+      --line: #e5e7eb;
+      --line-strong: #d7dbe1;
+      --text: #111317;
+      --text-soft: #626973;
+      --text-faint: #8b919a;
+      --accent: #17191d;
+      --accent-soft: #eef0f3;
+      --shadow: 0 1px 2px rgba(17, 19, 23, 0.04), 0 14px 32px rgba(17, 19, 23, 0.04);
+      --radius-lg: 18px;
+      --radius-md: 14px;
+      --radius-sm: 10px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Aptos", "Segoe UI Variable", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(17, 19, 23, 0.03), transparent 24%),
+        linear-gradient(180deg, #f7f8fa 0%, #f3f4f6 100%);
+      color: var(--text);
+    }
+
+    .frame {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 272px minmax(0, 1fr);
+    }
+
+    .sidebar {
+      background: rgba(255, 255, 255, 0.9);
+      border-right: 1px solid var(--line);
+      padding: 18px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      backdrop-filter: blur(20px);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 10px;
+    }
+
+    .brand-mark {
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      background: var(--accent);
+      color: white;
+      display: grid;
+      place-items: center;
+      font-weight: 700;
+      font-size: 13px;
+      letter-spacing: 0.08em;
+    }
+
+    .brand-copy small {
+      display: block;
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+      margin-bottom: 3px;
+    }
+
+    .brand-copy strong {
+      display: block;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .workspace-switcher,
+    .nav-group {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      border-radius: var(--radius-md);
+      padding: 10px;
+      box-shadow: 0 1px 0 rgba(17, 19, 23, 0.02);
+    }
+
+    .workspace-switcher {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 14px;
+    }
+
+    .workspace-switcher .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: var(--accent);
+    }
+
+    .section-label {
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+      margin: 0 6px 8px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 11px 12px;
+      border-radius: 10px;
+      color: var(--text-soft);
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+
+    .nav-item.active {
+      background: var(--accent-soft);
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .nav-count {
+      min-width: 22px;
+      height: 22px;
+      padding: 0 6px;
+      border-radius: 999px;
+      background: #f1f2f4;
+      border: 1px solid var(--line);
+      display: grid;
+      place-items: center;
+      font-size: 12px;
+      color: var(--text-faint);
+    }
+
+    .main {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 18px 28px;
+      background: rgba(247, 248, 250, 0.88);
+      border-bottom: 1px solid var(--line);
+      backdrop-filter: blur(20px);
+    }
+
+    .breadcrumbs {
+      font-size: 14px;
+      color: var(--text-faint);
+    }
+
+    .breadcrumbs strong {
+      color: var(--text);
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .search {
+      width: 360px;
+      border: 1px solid var(--line-strong);
+      background: white;
+      border-radius: 11px;
+      padding: 11px 14px;
+      color: var(--text-faint);
+      font-size: 14px;
+    }
+
+    .icon-btn,
+    .ghost-btn,
+    .primary-btn {
+      border-radius: 10px;
+      border: 1px solid var(--line-strong);
+      background: white;
+      height: 40px;
+      padding: 0 14px;
+      color: var(--text);
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .icon-btn {
+      width: 40px;
+      justify-content: center;
+      padding: 0;
+    }
+
+    .primary-btn {
+      border-color: #1b1e23;
+      background: #17191d;
+      color: white;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04);
+    }
+
+    .content {
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .hero {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 24px;
+      padding: 4px 2px;
+    }
+
+    .hero h1 {
+      margin: 0;
+      font-size: 34px;
+      letter-spacing: -0.04em;
+      line-height: 1.02;
+    }
+
+    .hero p {
+      margin: 8px 0 0;
+      color: var(--text-soft);
+      font-size: 15px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .card,
+    .metric,
+    .table-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+    }
+
+    .metric {
+      padding: 18px 20px 20px;
+    }
+
+    .metric .caption {
+      font-size: 13px;
+      color: var(--text-soft);
+      margin-bottom: 14px;
+    }
+
+    .metric .value {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      margin-bottom: 8px;
+    }
+
+    .metric .delta {
+      font-size: 13px;
+      color: var(--text-soft);
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: 340px minmax(0, 1fr);
+      gap: 18px;
+    }
+
+    .card {
+      padding: 18px;
+    }
+
+    .card-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 14px;
+    }
+
+    .card-title h3,
+    .table-title h3 {
+      margin: 0;
+      font-size: 18px;
+      letter-spacing: -0.03em;
+    }
+
+    .card-title p,
+    .table-title p {
+      margin: 6px 0 0;
+      color: var(--text-soft);
+      font-size: 13px;
+    }
+
+    .list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .list-item {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 14px;
+      background: var(--panel-soft);
+    }
+
+    .list-item.active {
+      border-color: #cfd4dc;
+      background: #f4f5f7;
+    }
+
+    .list-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 9px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: white;
+      color: var(--text-soft);
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .graph-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 16px;
+    }
+
+    .mini-panel {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--panel-soft);
+      padding: 16px;
+      min-height: 184px;
+    }
+
+    .placeholder-line {
+      height: 10px;
+      border-radius: 999px;
+      background: #e6e8eb;
+      margin-bottom: 10px;
+    }
+
+    .chart {
+      display: flex;
+      align-items: end;
+      gap: 8px;
+      height: 140px;
+      margin-top: 18px;
+      padding-top: 8px;
+      border-top: 1px solid var(--line);
+    }
+
+    .bar {
+      flex: 1;
+      border-radius: 8px 8px 2px 2px;
+      background: linear-gradient(180deg, #23262c, #535861);
+      opacity: 0.95;
+    }
+
+    .line-chart {
+      position: relative;
+      height: 140px;
+      margin-top: 18px;
+      border: 1px dashed var(--line);
+      border-radius: 14px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.84), rgba(246,247,249,0.94)),
+        linear-gradient(90deg, transparent 0 11%, rgba(17,19,23,0.02) 11% 12%, transparent 12% 23%, rgba(17,19,23,0.02) 23% 24%, transparent 24% 35%, rgba(17,19,23,0.02) 35% 36%, transparent 36% 47%, rgba(17,19,23,0.02) 47% 48%, transparent 48% 59%, rgba(17,19,23,0.02) 59% 60%, transparent 60% 71%, rgba(17,19,23,0.02) 71% 72%, transparent 72% 83%, rgba(17,19,23,0.02) 83% 84%, transparent 84% 100%);
+      overflow: hidden;
+    }
+
+    .line-chart svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .table-card {
+      overflow: hidden;
+    }
+
+    .table-head {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    .table th,
+    .table td {
+      padding: 15px 20px;
+      border-bottom: 1px solid #eef0f2;
+      text-align: left;
+    }
+
+    .table th {
+      color: var(--text-faint);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .progress {
+      height: 8px;
+      width: 120px;
+      border-radius: 999px;
+      background: #eceef1;
+      overflow: hidden;
+    }
+
+    .progress > span {
+      display: block;
+      height: 100%;
+      width: 78%;
+      border-radius: inherit;
+      background: #181b20;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(9, 10, 12, 0.28);
+      backdrop-filter: blur(6px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px;
+    }
+
+    .modal {
+      width: min(980px, 100%);
+      background: white;
+      border: 1px solid #d8dce3;
+      border-radius: 22px;
+      box-shadow: 0 18px 60px rgba(17, 19, 23, 0.14);
+      overflow: hidden;
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .modal-header strong {
+      font-size: 22px;
+      letter-spacing: -0.04em;
+    }
+
+    .modal-body {
+      padding: 22px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      background: #fcfcfd;
+    }
+
+    .section {
+      border: 1px solid var(--line);
+      background: white;
+      border-radius: 18px;
+      padding: 18px;
+    }
+
+    .section h4 {
+      margin: 0;
+      font-size: 15px;
+      letter-spacing: -0.02em;
+    }
+
+    .section p {
+      margin: 6px 0 0;
+      color: var(--text-soft);
+      font-size: 13px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px 16px;
+      margin-top: 16px;
+    }
+
+    .field.full {
+      grid-column: 1 / -1;
+    }
+
+    .label {
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+
+    .hint {
+      margin-top: 8px;
+      font-size: 12px;
+      color: var(--text-faint);
+    }
+
+    .input,
+    .textarea {
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid #d6dbe3;
+      background: white;
+      padding: 12px 13px;
+      font-size: 14px;
+      color: var(--text);
+    }
+
+    .input.focused {
+      border-color: #1c2026;
+      box-shadow: 0 0 0 3px rgba(17, 19, 23, 0.06);
+    }
+
+    .textarea {
+      min-height: 92px;
+      resize: none;
+    }
+
+    .modal-footer {
+      display: flex;
+      justify-content: end;
+      gap: 10px;
+      padding: 0 24px 22px;
+      background: #fcfcfd;
+    }
+
+    .caption-inline {
+      font-size: 12px;
+      color: var(--text-faint);
+    }
+
+    @media (max-width: 1200px) {
+      .stats,
+      .graph-grid,
+      .workspace,
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .frame {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">GR</div>
+        <div class="brand-copy">
+          <small>GraphRAG Workbench</small>
+          <strong>知识图谱后台</strong>
+        </div>
+      </div>
+
+      <div class="workspace-switcher">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="dot"></div>
+          <strong style="font-size:14px;">microsoft-research</strong>
+        </div>
+        <span style="color:#9aa0a8;">⌄</span>
+      </div>
+
+      <div>
+        <div class="section-label">工作区</div>
+        <div class="nav-group">
+          <div class="nav-item active"><span>概览</span></div>
+          <div class="nav-item"><span>知识图谱</span><span class="nav-count">12</span></div>
+          <div class="nav-item"><span>图谱可视化</span></div>
+          <div class="nav-item"><span>数据源</span><span class="nav-count">28</span></div>
+          <div class="nav-item"><span>查询测试台</span></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-label">运维</div>
+        <div class="nav-group">
+          <div class="nav-item"><span>实体 / 关系</span></div>
+          <div class="nav-item"><span>任务监控</span><span class="nav-count">3</span></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-label">集成</div>
+        <div class="nav-group">
+          <div class="nav-item"><span>Dify 对接</span></div>
+          <div class="nav-item"><span>系统设置</span></div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="breadcrumbs"><strong>图谱管理</strong> / 新建图谱</div>
+        <div class="top-actions">
+          <div class="search">搜索图谱、实体、任务...</div>
+          <button class="icon-btn">⌘K</button>
+          <button class="icon-btn">◫</button>
+          <button class="ghost-btn">通知</button>
+          <button class="primary-btn">＋ 新建图谱</button>
+        </div>
+      </header>
+
+      <section class="content">
+        <div class="hero">
+          <div>
+            <h1>图谱管理</h1>
+            <p>去掉暖色和装饰性渐变以后，整体界面更像一个专业、锐利的知识图谱工作台。</p>
+          </div>
+          <div class="chip">Visual Language Mockup v1</div>
+        </div>
+
+        <div class="stats">
+          <div class="metric">
+            <div class="caption">图谱项目</div>
+            <div class="value">12</div>
+            <div class="delta">本月新增 2 个</div>
+          </div>
+          <div class="metric">
+            <div class="caption">实体总数</div>
+            <div class="value">248,931</div>
+            <div class="delta">最近 14 天持续增长</div>
+          </div>
+          <div class="metric">
+            <div class="caption">关系总数</div>
+            <div class="value">612,405</div>
+            <div class="delta">结构更清晰，强调数字本身</div>
+          </div>
+          <div class="metric">
+            <div class="caption">Token 消耗</div>
+            <div class="value">42.8M</div>
+            <div class="delta">只保留文字层级，不靠颜色吸引注意</div>
+          </div>
+        </div>
+
+        <div class="workspace">
+          <div class="card">
+            <div class="card-title">
+              <div>
+                <h3>侧边项目</h3>
+                <p>边框清晰，面板不漂浮。</p>
+              </div>
+              <button class="primary-btn">新建图谱</button>
+            </div>
+            <div class="list">
+              <div class="list-item active">
+                <div class="list-row">
+                  <strong>customer-service-kg</strong>
+                  <span class="chip">构建中</span>
+                </div>
+                <div style="margin-top:8px;font-size:13px;color:#6b7280;">data/projects/customer-service-kg</div>
+              </div>
+              <div class="list-item">
+                <div class="list-row">
+                  <strong>finance-report-2024</strong>
+                  <span class="chip">已完成</span>
+                </div>
+                <div style="margin-top:8px;font-size:13px;color:#6b7280;">24 份文件 · 1,204 切片</div>
+              </div>
+              <div class="list-item">
+                <div class="list-row">
+                  <strong>medical-papers-q2</strong>
+                  <span class="chip">待构建</span>
+                </div>
+                <div style="margin-top:8px;font-size:13px;color:#6b7280;">8 份文件 · 尚未生成产物</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:18px;">
+            <div class="graph-grid">
+              <div class="mini-panel">
+                <div class="card-title" style="margin-bottom:0;">
+                  <div>
+                    <h3>实体增长</h3>
+                    <p>图表从彩色转为单色后，视觉噪音更低。</p>
+                  </div>
+                  <div class="chip">14 天</div>
+                </div>
+                <div class="line-chart">
+                  <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+                    <polyline
+                      fill="rgba(23,25,29,0.08)"
+                      stroke="none"
+                      points="0,78 10,74 20,76 30,66 40,64 50,68 60,58 70,55 80,48 90,43 100,36 100,100 0,100"></polyline>
+                    <polyline
+                      fill="none"
+                      stroke="#181b20"
+                      stroke-width="2.2"
+                      points="0,78 10,74 20,76 30,66 40,64 50,68 60,58 70,55 80,48 90,43 100,36"></polyline>
+                  </svg>
+                </div>
+              </div>
+
+              <div class="mini-panel">
+                <div class="card-title" style="margin-bottom:0;">
+                  <div>
+                    <h3>Token 消耗（日）</h3>
+                    <p>数据形态保留，颜色角色退后。</p>
+                  </div>
+                  <div class="chip">实时</div>
+                </div>
+                <div class="chart">
+                  <div class="bar" style="height:24%;"></div>
+                  <div class="bar" style="height:34%;"></div>
+                  <div class="bar" style="height:18%;"></div>
+                  <div class="bar" style="height:28%;"></div>
+                  <div class="bar" style="height:56%;"></div>
+                  <div class="bar" style="height:46%;"></div>
+                  <div class="bar" style="height:26%;"></div>
+                  <div class="bar" style="height:39%;"></div>
+                  <div class="bar" style="height:51%;"></div>
+                  <div class="bar" style="height:66%;"></div>
+                  <div class="bar" style="height:81%;"></div>
+                  <div class="bar" style="height:75%;"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="table-card">
+              <div class="table-head">
+                <div class="table-title">
+                  <h3>最近任务</h3>
+                  <p>表格分隔明确、阴影变浅、信息密度更高。</p>
+                </div>
+                <button class="ghost-btn">查看全部</button>
+              </div>
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>图谱</th>
+                    <th>阶段</th>
+                    <th>进度</th>
+                    <th>耗时</th>
+                    <th>状态</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>金融年报 2024</strong></td>
+                    <td>GenerateReports</td>
+                    <td><div class="progress"><span></span></div></td>
+                    <td>12m 04s</td>
+                    <td><span class="chip">运行中</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>医疗文献 Q2</strong></td>
+                    <td>ExtractGraph</td>
+                    <td><div class="progress"><span style="width:100%;"></span></div></td>
+                    <td>41m 22s</td>
+                    <td><span class="chip">完成</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal-backdrop">
+    <div class="modal">
+      <div class="modal-header">
+        <div>
+          <strong>新建图谱</strong>
+          <div class="caption-inline" style="margin-top:6px;">视觉语言只改质感，不改布局结构。</div>
+        </div>
+        <div style="color:#8e949c;font-size:24px;">×</div>
+      </div>
+
+      <div class="modal-body">
+        <div class="section">
+          <h4>基础信息</h4>
+          <p>边框更明确，焦点状态改成深灰描边，不再用明显蓝色。</p>
+          <div class="form-grid">
+            <div class="field">
+              <label class="label">名称</label>
+              <input class="input focused" value="customer-service-kg">
+            </div>
+            <div class="field">
+              <label class="label">绑定模型配置</label>
+              <input class="input" value="默认模型配置">
+            </div>
+            <div class="field full">
+              <label class="label">描述</label>
+              <textarea class="textarea">用于客服知识库与问答链路的图谱项目。</textarea>
+            </div>
+            <div class="field full">
+              <label class="label">保存位置</label>
+              <input class="input" value="data/projects">
+              <div class="hint">最终目录将自动生成为 &lt;保存位置&gt;/&lt;图谱ID&gt;</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h4>切片配置</h4>
+          <p>字段风格统一成更锐利的输入面板，层级靠排版和分区建立。</p>
+          <div class="form-grid">
+            <div class="field">
+              <label class="label">切片方式</label>
+              <input class="input" value="tokens">
+              <div class="hint">当前仅支持 tokens 切片方式。</div>
+            </div>
+            <div class="field">
+              <label class="label">编码模型</label>
+              <input class="input" value="o200k_base">
+            </div>
+            <div class="field">
+              <label class="label">切片大小</label>
+              <input class="input" value="1200">
+            </div>
+            <div class="field">
+              <label class="label">重叠大小</label>
+              <input class="input" value="100">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="ghost-btn">取消</button>
+        <button class="primary-btn">创建</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

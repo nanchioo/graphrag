@@ -43,6 +43,7 @@ export interface GraphCreateRequest {
   name: string;
   description?: string;
   model_profile_id?: string;
+  projects_root?: string;
   chunking?: GraphChunkingCreateRequest;
 }
 
