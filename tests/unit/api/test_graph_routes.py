@@ -342,6 +342,37 @@ def test_delete_graph_removes_project_from_registry_and_subsequent_get_returns_4
     assert "was not found" in detail_response.json()["message"]
 
 
+def test_delete_graph_in_custom_parent_removes_only_graph_workspace(
+    tmp_path: Path,
+    graph_client: tuple[
+        TestClient, Path, Path, AppConfigService, GraphRegistryService
+    ],
+):
+    client, _, _, _, _ = graph_client
+    custom_projects_root = tmp_path / "shared-parent"
+
+    create_response = client.post(
+        "/api/graph",
+        json={
+            "name": "Shared Parent Graph",
+            "projects_root": str(custom_projects_root),
+        },
+    )
+    assert create_response.status_code == 201
+
+    graph_id = create_response.json()["data"]["id"]
+    root_dir = custom_projects_root / graph_id
+    sibling_file = custom_projects_root / "keep.txt"
+    sibling_file.write_text("keep", encoding="utf-8")
+
+    delete_response = client.delete(f"/api/graph/{graph_id}")
+
+    assert delete_response.status_code == 200
+    assert not root_dir.exists()
+    assert custom_projects_root.exists()
+    assert sibling_file.exists()
+
+
 def test_delete_graph_returns_404_when_project_is_missing(
     graph_client: tuple[
         TestClient, Path, Path, AppConfigService, GraphRegistryService

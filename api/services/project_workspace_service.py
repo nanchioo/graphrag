@@ -5,6 +5,7 @@
 
 from pathlib import Path
 
+from fastapi import HTTPException, status
 import yaml
 from graphrag.cli.initialize import initialize_project_at
 
@@ -33,6 +34,7 @@ class ProjectWorkspaceService:
         chunking: GraphChunkingCreateRequest | None = None,
     ) -> None:
         """Create a standard GraphRAG project workspace."""
+        self._validate_workspace_target(root_dir)
         initialize_project_at(
             path=root_dir,
             force=False,
@@ -41,6 +43,21 @@ class ProjectWorkspaceService:
         )
         self._prompt_localization_service.localize_workspace_prompts(root_dir)
         self._write_chunking_settings(root_dir, chunking or DEFAULT_CHUNKING_CONFIG)
+
+    def _validate_workspace_target(self, root_dir: Path) -> None:
+        parent_dir = root_dir.parent
+
+        if parent_dir.exists() and not parent_dir.is_dir():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Graph projects root path '{parent_dir}' must be a directory.",
+            )
+
+        if root_dir.exists():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Graph workspace '{root_dir}' already exists.",
+            )
 
     def _write_chunking_settings(
         self,

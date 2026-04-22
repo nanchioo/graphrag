@@ -3,7 +3,9 @@
 
 from pathlib import Path
 
+import pytest
 import yaml
+from fastapi import HTTPException
 
 from api.schemas.graph import GraphChunkingCreateRequest
 from api.services.project_workspace_service import ProjectWorkspaceService
@@ -114,3 +116,33 @@ def test_initialize_workspace_keeps_default_chunking_when_not_overridden(
         "overlap": 100,
         "encoding_model": "o200k_base",
     }
+
+
+def test_initialize_workspace_rejects_parent_path_that_is_a_file(tmp_path: Path):
+    parent_file = tmp_path / "blocked-parent"
+    parent_file.write_text("not-a-directory", encoding="utf-8")
+
+    with pytest.raises(HTTPException) as exc_info:
+        ProjectWorkspaceService().initialize_workspace(
+            root_dir=parent_file / "graph-root",
+            model="qwen3.6-plus",
+            embedding_model="text-embedding-v3",
+        )
+
+    assert exc_info.value.status_code == 400
+    assert "must be a directory" in str(exc_info.value.detail)
+
+
+def test_initialize_workspace_rejects_existing_root_dir(tmp_path: Path):
+    root_dir = tmp_path / "existing-graph-root"
+    root_dir.mkdir(parents=True, exist_ok=True)
+
+    with pytest.raises(HTTPException) as exc_info:
+        ProjectWorkspaceService().initialize_workspace(
+            root_dir=root_dir,
+            model="qwen3.6-plus",
+            embedding_model="text-embedding-v3",
+        )
+
+    assert exc_info.value.status_code == 400
+    assert "already exists" in str(exc_info.value.detail)
