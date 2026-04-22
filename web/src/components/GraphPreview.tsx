@@ -39,7 +39,7 @@ export function GraphPreview({ preview, reports, loading = false }: GraphPreview
             color: "#203040",
           },
           lineStyle: {
-            color: "rgba(32, 48, 64, 0.28)",
+            color: "rgba(15, 23, 42, 0.20)",
             curveness: 0.08,
           },
           data: preview.nodes.map((node) => ({
@@ -49,7 +49,7 @@ export function GraphPreview({ preview, reports, loading = false }: GraphPreview
             category: node.type ?? "unknown",
             symbolSize: Math.max(26, (node.rank ?? 1) * 6),
             itemStyle: {
-              color: node.type === "person" ? "#1b645f" : "#c97849",
+              color: node.type === "person" ? "#0f8ea8" : "#111827",
             },
           })),
           links: preview.edges.map((edge) => ({
@@ -76,7 +76,7 @@ export function GraphPreview({ preview, reports, loading = false }: GraphPreview
   }, [preview]);
 
   return (
-    <Card className="surface-card" title="图谱预览">
+    <Card className="surface-card analysis-card analysis-graph-preview" title="图谱预览">
       <Spin spinning={loading}>
         {!preview ? (
           <Empty description="构建完成后可查看节点关系预览" />

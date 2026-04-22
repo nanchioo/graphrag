@@ -93,7 +93,10 @@ export function BuildStatusCard({
 
   if (!status) {
     return (
-      <Card className="surface-card" title="构建状态">
+      <Card
+        className="surface-card analysis-card analysis-status-card"
+        title="构建状态"
+      >
         <Empty description="选择图谱后查看构建状态" />
       </Card>
     );
@@ -101,7 +104,7 @@ export function BuildStatusCard({
 
   return (
     <Card
-      className="surface-card"
+      className="surface-card analysis-card analysis-status-card"
       title="构建状态"
       extra={
         <Space className="status-actions">
@@ -134,7 +137,7 @@ export function BuildStatusCard({
         <Progress
           percent={status.progress_percent}
           status={progressTone(status.status)}
-          strokeColor={status.status === "failed" ? "#ff4d4f" : undefined}
+          strokeColor={status.status === "failed" ? "#ff4d4f" : "#0f8ea8"}
         />
         <Typography.Text className="muted-text">{status.progress_message}</Typography.Text>
       </div>

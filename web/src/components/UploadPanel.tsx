@@ -42,7 +42,7 @@ export function UploadPanel({ graphId, loading = false, onUploaded }: UploadPane
   }
 
   return (
-    <Card className="surface-card" title="源文件上传">
+    <Card className="surface-card analysis-card analysis-upload-panel" title="源文件上传">
       <Space direction="vertical" size="middle" style={{ width: "100%" }}>
         <Upload.Dragger
           multiple

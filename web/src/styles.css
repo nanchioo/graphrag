@@ -248,6 +248,32 @@ body {
     linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(248, 251, 253, 0.86));
 }
 
+.analysis-status-card {
+  background:
+    radial-gradient(circle at top right, rgba(39, 194, 217, 0.08), transparent 24%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(247, 250, 252, 0.86));
+}
+
+.analysis-graph-preview {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(247, 250, 252, 0.88));
+}
+
+.analysis-sidebar-table {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(247, 250, 252, 0.86));
+}
+
+.analysis-upload-panel {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(247, 250, 252, 0.86));
+}
+
+.analysis-text-unit-list {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(247, 250, 252, 0.86));
+}
+
 .surface-card .ant-card-head {
   border-bottom-color: var(--analysis-line);
 }
@@ -271,6 +297,17 @@ body {
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+.analysis-graph-preview .ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: var(--analysis-accent) !important;
+}
+
+.analysis-graph-preview .ant-statistic {
+  padding: 12px 14px;
+  border: 1px solid var(--analysis-line);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.78);
 }
 
 .graph-preview-chart {
@@ -301,6 +338,15 @@ body {
   margin-top: 8px;
   color: #6b7480;
   font-size: 12px;
+}
+
+.analysis-sidebar-table .ant-table-wrapper,
+.analysis-text-unit-list .ant-table-wrapper {
+  border-radius: 18px;
+}
+
+.analysis-upload-panel .ant-upload-wrapper {
+  border-radius: 18px;
 }
 
 .graph-create-modal.ant-modal {

@@ -23,7 +23,7 @@ export function TextUnitList({
   onDelete,
 }: TextUnitListProps) {
   return (
-    <Card className="surface-card" title="文本切片">
+    <Card className="surface-card analysis-card analysis-text-unit-list" title="文本切片">
       {items.length === 0 ? (
         <Empty description="当前图谱还没有可展示的文本切片" />
       ) : (

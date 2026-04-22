@@ -338,6 +338,38 @@ def test_graph_manage_page_uses_analysis_console_page_and_modal_classes():
     assert ".analysis-form-grid {" in styles_source
 
 
+def test_graph_operation_components_use_analysis_console_surface_classes():
+    build_source = Path("web/src/components/BuildStatusCard.tsx").read_text(
+        encoding="utf-8"
+    )
+    preview_source = Path("web/src/components/GraphPreview.tsx").read_text(
+        encoding="utf-8"
+    )
+    table_source = Path("web/src/components/GraphTable.tsx").read_text(
+        encoding="utf-8"
+    )
+    upload_source = Path("web/src/components/UploadPanel.tsx").read_text(
+        encoding="utf-8"
+    )
+    text_unit_source = Path("web/src/components/TextUnitList.tsx").read_text(
+        encoding="utf-8"
+    )
+    styles_source = Path("web/src/styles.css").read_text(encoding="utf-8")
+
+    assert 'className="surface-card analysis-card analysis-status-card"' in build_source
+    assert 'strokeColor={status.status === "failed" ? "#ff4d4f" : "#0f8ea8"}' in build_source
+    assert 'className="surface-card analysis-card analysis-graph-preview"' in preview_source
+    assert 'color: node.type === "person" ? "#0f8ea8" : "#111827"' in preview_source
+    assert 'className="surface-card analysis-card analysis-sidebar-table"' in table_source
+    assert 'className="surface-card analysis-card analysis-upload-panel"' in upload_source
+    assert 'className="surface-card analysis-card analysis-text-unit-list"' in text_unit_source
+    assert ".analysis-status-card {" in styles_source
+    assert ".analysis-graph-preview {" in styles_source
+    assert ".analysis-sidebar-table {" in styles_source
+    assert ".analysis-upload-panel .ant-upload-wrapper {" in styles_source
+    assert ".analysis-text-unit-list .ant-table-wrapper {" in styles_source
+
+
 def test_graph_manage_page_keeps_build_polling_non_blocking():
     page_source = Path("web/src/pages/GraphManagePage.tsx").read_text(encoding="utf-8")
     primary_start = page_source.index("const [detailResult, statusResult, filesResult] =")

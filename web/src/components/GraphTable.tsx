@@ -42,7 +42,7 @@ export function GraphTable({
 }: GraphTableProps) {
   return (
     <Card
-      className="surface-card"
+      className="surface-card analysis-card analysis-sidebar-table"
       title="图谱项目"
       extra={
         <Button size="small" onClick={onRefresh}>
