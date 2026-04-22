@@ -53,7 +53,17 @@ class GraphCreateRequest(BaseModel):
     name: str
     description: str | None = None
     model_profile_id: str | None = None
+    projects_root: str | None = None
     chunking: GraphChunkingCreateRequest | None = None
+
+    @field_validator("projects_root")
+    @classmethod
+    def validate_projects_root(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+
+        normalized = value.strip()
+        return normalized or None
 
 
 class GraphSummary(BaseModel):

@@ -77,7 +77,8 @@ async def create_graph(
 ) -> ApiResponse[GraphDetailPayload]:
     """Create a GraphRAG project workspace and register it."""
     system_config = app_config_service.get_system_config()
-    projects_root = graph_registry_service.resolve_root_dir(system_config.projects_root)
+    effective_projects_root = payload.projects_root or system_config.projects_root
+    projects_root = graph_registry_service.resolve_root_dir(effective_projects_root)
     model_profile_id = payload.model_profile_id or system_config.default_model_profile_id
 
     completion_model = DEFAULT_COMPLETION_MODEL

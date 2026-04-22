@@ -211,6 +211,53 @@ def test_create_graph_accepts_chunking_config_and_persists_it_to_workspace(
     assert "encoding_model: cl100k_base" in settings_text
 
 
+def test_create_graph_allows_per_request_projects_root_override(
+    tmp_path: Path,
+    graph_client: tuple[
+        TestClient, Path, Path, AppConfigService, GraphRegistryService
+    ],
+):
+    client, projects_root, _, _, _ = graph_client
+    custom_projects_root = tmp_path / "custom-projects"
+
+    response = client.post(
+        "/api/graph",
+        json={
+            "name": "Custom Root Graph",
+            "projects_root": str(custom_projects_root),
+        },
+    )
+
+    assert response.status_code == 201
+    graph_id = response.json()["data"]["id"]
+    root_dir = custom_projects_root / graph_id
+
+    assert response.json()["data"]["root_dir"] == str(root_dir)
+    assert root_dir.exists()
+    assert not (projects_root / graph_id).exists()
+
+
+def test_create_graph_treats_whitespace_projects_root_as_system_default(
+    graph_client: tuple[
+        TestClient, Path, Path, AppConfigService, GraphRegistryService
+    ],
+):
+    client, projects_root, _, _, _ = graph_client
+
+    response = client.post(
+        "/api/graph",
+        json={
+            "name": "Whitespace Root Graph",
+            "projects_root": "   ",
+        },
+    )
+
+    assert response.status_code == 201
+    graph_id = response.json()["data"]["id"]
+    assert response.json()["data"]["root_dir"] == str(projects_root / graph_id)
+    assert (projects_root / graph_id).exists()
+
+
 def test_create_graph_rejects_chunk_overlap_that_is_not_smaller_than_chunk_size(
     graph_client: tuple[
         TestClient, Path, Path, AppConfigService, GraphRegistryService
