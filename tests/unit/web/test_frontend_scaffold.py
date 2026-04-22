@@ -399,6 +399,20 @@ def test_secondary_pages_and_forms_inherit_analysis_console_visual_language():
     assert ".analysis-modal--profile .ant-modal-content {" in styles_source
 
 
+def test_analysis_console_styles_include_responsive_guards():
+    styles_source = Path("web/src/styles.css").read_text(encoding="utf-8")
+
+    assert "@media (max-width: 1100px) {" in styles_source
+    assert "  .analysis-hero-meta {" in styles_source
+    assert "    width: 100%;" in styles_source
+    assert "    flex-wrap: wrap;" in styles_source
+    assert "  .graph-create-layout.analysis-form-grid {" in styles_source
+    assert "@media (max-width: 720px) {" in styles_source
+    assert "  .analysis-header," in styles_source
+    assert "  .analysis-card," in styles_source
+    assert "  .analysis-modal .ant-modal-content {" in styles_source
+
+
 def test_graph_manage_page_keeps_build_polling_non_blocking():
     page_source = Path("web/src/pages/GraphManagePage.tsx").read_text(encoding="utf-8")
     primary_start = page_source.index("const [detailResult, statusResult, filesResult] =")

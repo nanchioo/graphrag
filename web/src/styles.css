@@ -498,6 +498,16 @@ body {
     flex-direction: column;
   }
 
+  .analysis-hero {
+    padding: 22px;
+  }
+
+  .analysis-hero-meta {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
   .nav-menu.ant-menu {
     justify-content: start;
     min-width: 0;
@@ -506,13 +516,23 @@ body {
   .page-grid {
     grid-template-columns: 1fr;
   }
+
+  .graph-create-layout.analysis-form-grid {
+    gap: 16px;
+  }
 }
 
 @media (max-width: 720px) {
   .app-header,
+  .analysis-header,
   .app-content {
     padding-left: 16px;
     padding-right: 16px;
+  }
+
+  .analysis-card,
+  .analysis-modal .ant-modal-content {
+    border-radius: 18px;
   }
 
   .page-hero {
