@@ -1,4 +1,3 @@
-import { Layout, Menu, Typography } from "antd";
 import {
   BrowserRouter,
   Navigate,
@@ -13,6 +12,37 @@ import { GraphManagePage } from "./pages/GraphManagePage";
 import { ModelConfigPage } from "./pages/ModelConfigPage";
 import { QueryPage } from "./pages/QueryPage";
 
+const NAV_DESCRIPTIONS: Record<string, string> = {
+  "/graphs": "Projects, files, builds",
+  "/models": "Providers and defaults",
+  "/query": "Ask and inspect context",
+};
+
+const ICONS: Record<string, JSX.Element> = {
+  "/graphs": (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 4.75a3.25 3.25 0 1 1 0 6.5 3.25 3.25 0 0 1 0-6.5Z" />
+      <path d="M5.5 15.75a2.75 2.75 0 1 1 0 5.5 2.75 2.75 0 0 1 0-5.5Z" />
+      <path d="M18.5 15.75a2.75 2.75 0 1 1 0 5.5 2.75 2.75 0 0 1 0-5.5Z" />
+      <path d="M10.35 10.05 6.95 16.1M13.65 10.05l3.4 6.05" />
+    </svg>
+  ),
+  "/models": (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M5 5.75A2.75 2.75 0 0 1 7.75 3h8.5A2.75 2.75 0 0 1 19 5.75v6.5A2.75 2.75 0 0 1 16.25 15h-8.5A2.75 2.75 0 0 1 5 12.25v-6.5Z" />
+      <path d="M8 19h8M12 15v4" />
+      <path d="M8.5 7.5h7M8.5 10.5h4.75" />
+    </svg>
+  ),
+  "/query": (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M10.75 18.5a7.75 7.75 0 1 1 0-15.5 7.75 7.75 0 0 1 0 15.5Z" />
+      <path d="m16.5 16.5 4 4" />
+      <path d="M8.25 9.25a2.5 2.5 0 0 1 4.85.86c0 1.76-2.35 2.03-2.35 3.39M10.75 15.5h.01" />
+    </svg>
+  ),
+};
+
 function AppShell() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -21,31 +51,65 @@ function AppShell() {
     "/graphs";
 
   return (
-    <Layout className="app-shell analysis-shell">
-      <header className="app-header analysis-header">
-        <div className="brand-block analysis-brand">
-          <span className="brand-kicker analysis-kicker">GraphRAG Workbench</span>
-          <Typography.Title level={2} className="brand-title">
-            知识图谱管理后台
-          </Typography.Title>
+    <div className="app-shell">
+      <aside className="app-sidebar" aria-label="Primary navigation">
+        <button
+          type="button"
+          className="sidebar-brand"
+          onClick={() => navigate("/graphs")}
+          aria-label="Go to GraphRAG projects"
+        >
+          <span className="sidebar-logo">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 3 4.2 7.05 12 11.1l7.8-4.05L12 3Z" />
+              <path d="M4.2 12.1 12 16.15l7.8-4.05" />
+              <path d="M4.2 17.05 12 21.1l7.8-4.05" />
+            </svg>
+          </span>
+          <span className="sidebar-brand-text">
+            <span className="sidebar-brand-title">GraphRAG</span>
+            <span className="sidebar-brand-subtitle">Admin Console</span>
+          </span>
+        </button>
+
+        <nav className="sidebar-nav">
+          {navigationItems.map((item) => (
+            <button
+              type="button"
+              key={item.key}
+              className={`sidebar-nav-item${selectedKey === item.key ? " active" : ""}`}
+              onClick={() => navigate(item.key)}
+              aria-current={selectedKey === item.key ? "page" : undefined}
+            >
+              <span className="sidebar-nav-icon">{ICONS[item.key] ?? null}</span>
+              <span className="sidebar-nav-copy">
+                <span className="sidebar-nav-label">{item.label}</span>
+                <span className="sidebar-nav-description">
+                  {NAV_DESCRIPTIONS[item.key] ?? "Workspace"}
+                </span>
+              </span>
+            </button>
+          ))}
+        </nav>
+
+        <div className="sidebar-footer">
+          <div className="sidebar-footer-kicker">Workspace</div>
+          <div className="sidebar-footer-title">Local GraphRAG</div>
+          <div className="sidebar-footer-copy">Light dashboard layout</div>
         </div>
-        <Menu
-          mode="horizontal"
-          selectedKeys={[selectedKey]}
-          items={navigationItems}
-          className="nav-menu analysis-nav-menu"
-          onClick={({ key }) => navigate(key)}
-        />
-      </header>
-      <Layout.Content className="app-content">
-        <Routes>
-          <Route path="/" element={<Navigate to="/graphs" replace />} />
-          <Route path="/graphs" element={<GraphManagePage />} />
-          <Route path="/models" element={<ModelConfigPage />} />
-          <Route path="/query" element={<QueryPage />} />
-        </Routes>
-      </Layout.Content>
-    </Layout>
+      </aside>
+
+      <main className="app-main">
+        <div className="app-content">
+          <Routes>
+            <Route path="/" element={<Navigate to="/graphs" replace />} />
+            <Route path="/graphs" element={<GraphManagePage />} />
+            <Route path="/models" element={<ModelConfigPage />} />
+            <Route path="/query" element={<QueryPage />} />
+          </Routes>
+        </div>
+      </main>
+    </div>
   );
 }
 

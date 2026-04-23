@@ -3,7 +3,7 @@ import type { QueryMode } from "../types";
 export const navigationItems = [
   { key: "/graphs", label: "图谱管理" },
   { key: "/models", label: "模型配置" },
-  { key: "/query", label: "问答控制台" },
+  { key: "/query", label: "问答工作台" },
 ];
 
 export const GRAPH_STATUS_META = {

@@ -148,7 +148,7 @@ export function ModelProfileForm({
       confirmLoading={loading}
       onCancel={onCancel}
       onOk={() => void form.submit()}
-      destroyOnClose
+      destroyOnHidden
     >
       <Form form={form} layout="vertical" onFinish={(values) => void onSubmit(values)}>
         <section className="profile-form-section">
