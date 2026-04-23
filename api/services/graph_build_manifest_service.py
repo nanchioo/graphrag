@@ -36,6 +36,14 @@ class BuildManifestFileEntry(BaseModel):
     text_unit_count: int = 0
 
 
+class BuildManifestInputDiff(BaseModel):
+    """Classification of source input changes since the previous manifest scan."""
+
+    added: list[str] = Field(default_factory=list)
+    changed: list[str] = Field(default_factory=list)
+    deleted: list[str] = Field(default_factory=list)
+
+
 class BuildManifest(BaseModel):
     """Project-level manifest state persisted in logs/build_manifest.json."""
 
@@ -51,6 +59,7 @@ class BuildManifest(BaseModel):
     pending_file_count: int = 0
     last_error: str | None = None
     resumable: bool = False
+    input_diff: BuildManifestInputDiff = Field(default_factory=BuildManifestInputDiff)
     files: list[BuildManifestFileEntry] = Field(default_factory=list)
 
 
@@ -89,27 +98,32 @@ class GraphBuildManifestService:
         graph_id: str,
         action: GraphBuildAction,
     ) -> BuildManifest:
-        if action == "start" or not self.manifest_path(root_dir).exists():
+        if not self.manifest_path(root_dir).exists():
             return self.initialize_manifest(root_dir=root_dir, graph_id=graph_id)
+        if action == "start":
+            manifest = self.load_manifest(root_dir)
+            if manifest.status != "completed":
+                return self.initialize_manifest(root_dir=root_dir, graph_id=graph_id)
         return self.refresh_manifest(root_dir=root_dir, action=action)
 
     def refresh_manifest(self, root_dir: Path, action: GraphBuildAction) -> BuildManifest:
         manifest = self.load_manifest(root_dir)
         previous_by_path = {item.relative_path: item for item in manifest.files}
+        current_files = self._scan_input_files(root_dir)
+        current_by_path = {item.relative_path: item for item in current_files}
         refreshed_files: list[BuildManifestFileEntry] = []
+        added: list[str] = []
+        changed: list[str] = []
 
-        for current_item in self._scan_input_files(root_dir):
+        for current_item in current_files:
             previous_item = previous_by_path.get(current_item.relative_path)
             if previous_item is None:
+                added.append(current_item.relative_path)
                 refreshed_files.append(current_item)
                 continue
 
-            is_unchanged = (
-                previous_item.size_bytes == current_item.size_bytes
-                and previous_item.modified_at == current_item.modified_at
-                and previous_item.content_hash == current_item.content_hash
-            )
-            if not is_unchanged:
+            if not self._is_unchanged(previous_item=previous_item, current_item=current_item):
+                changed.append(current_item.relative_path)
                 refreshed_files.append(current_item.model_copy(update={"status": "pending"}))
                 continue
 
@@ -119,10 +133,16 @@ class GraphBuildManifestService:
 
             refreshed_files.append(previous_item)
 
+        deleted = sorted(set(previous_by_path) - set(current_by_path))
         refreshed = manifest.model_copy(
             update={
                 "action": action,
                 "updated_at": self._utcnow(),
+                "input_diff": BuildManifestInputDiff(
+                    added=added,
+                    changed=changed,
+                    deleted=deleted,
+                ),
                 "files": refreshed_files,
             }
         )
@@ -150,6 +170,37 @@ class GraphBuildManifestService:
         manifest = self.load_manifest(root_dir)
         return manifest.resumable or any(
             item.status in {"pending", "failed", "building"} for item in manifest.files
+        )
+
+    def compare_inputs_to_manifest(self, root_dir: Path) -> BuildManifestInputDiff:
+        path = self.manifest_path(root_dir)
+        if not path.exists():
+            return BuildManifestInputDiff()
+
+        manifest = self.load_manifest(root_dir)
+        if manifest.status != "completed":
+            return BuildManifestInputDiff()
+
+        previous_by_path = {item.relative_path: item for item in manifest.files}
+        current_files = self._scan_input_files(root_dir)
+        current_by_path = {item.relative_path: item for item in current_files}
+
+        added = sorted(set(current_by_path) - set(previous_by_path))
+        deleted = sorted(set(previous_by_path) - set(current_by_path))
+        changed = sorted(
+            path
+            for path, current_item in current_by_path.items()
+            if path in previous_by_path
+            and not self._is_unchanged(
+                previous_item=previous_by_path[path],
+                current_item=current_item,
+            )
+        )
+
+        return BuildManifestInputDiff(
+            added=added,
+            changed=changed,
+            deleted=deleted,
         )
 
     def mark_file_started(self, root_dir: Path, relative_path: str) -> BuildManifest:
@@ -394,6 +445,17 @@ class GraphBuildManifestService:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(manifest.model_dump_json(indent=2), encoding="utf-8")
         return manifest
+
+    def _is_unchanged(
+        self,
+        previous_item: BuildManifestFileEntry,
+        current_item: BuildManifestFileEntry,
+    ) -> bool:
+        return (
+            previous_item.size_bytes == current_item.size_bytes
+            and previous_item.modified_at == current_item.modified_at
+            and previous_item.content_hash == current_item.content_hash
+        )
 
     def _recount(self, manifest: BuildManifest) -> BuildManifest:
         return manifest.model_copy(

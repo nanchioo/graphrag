@@ -10,8 +10,8 @@
       "provider": "openai",
       "name": "通义千问",
       "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
-      "api_key": "sk-aa53c23886144d71a6128763863288e1",
-      "model_name": "qwen3.6-plus",
+      "api_key": "sk-10a9134787c741439acf399614f7659f",
+      "model_name": "qwen3.6-flash",
       "embedding_model_name": "text-embedding-v3",
       "api_version": ""
     }
