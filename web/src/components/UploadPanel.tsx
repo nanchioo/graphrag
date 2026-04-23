@@ -24,18 +24,18 @@ export function UploadPanel({ graphId, loading = false, onUploaded }: UploadPane
       .filter((file): file is NonNullable<typeof file> => file !== undefined);
 
     if (files.length === 0) {
-      message.warning("请选择要上传的文件");
+      message.warning("请先选择至少一个文件。");
       return;
     }
 
     try {
       setUploading(true);
       await uploadGraphFiles(graphId, files);
-      message.success("源文件已上传");
+      message.success("源文件已上传。");
       setFileList([]);
       await onUploaded();
     } catch (error) {
-      message.error(error instanceof Error ? error.message : "文件上传失败");
+      message.error(error instanceof Error ? error.message : "文件上传失败。");
     } finally {
       setUploading(false);
     }
@@ -66,8 +66,10 @@ export function UploadPanel({ graphId, loading = false, onUploaded }: UploadPane
             setFileList((current) => current.filter((item) => item.uid !== file.uid));
           }}
         >
-          <Typography.Text strong>拖拽文件到这里，或点击选择文件</Typography.Text>
-          <div className="upload-help">支持 txt、md、markdown、json、jsonl、csv、pdf</div>
+          <Typography.Text strong>将源文件拖拽到这里，或点击选择文件。</Typography.Text>
+          <div className="analysis-upload-hint">
+            支持 txt、md、markdown、json、jsonl、csv、pdf，上传后将用于构建图谱。
+          </div>
         </Upload.Dragger>
         <Space className="inline-actions">
           <Button
@@ -79,7 +81,7 @@ export function UploadPanel({ graphId, loading = false, onUploaded }: UploadPane
             上传到当前图谱
           </Button>
           <Typography.Text className="muted-text">
-            当前待上传 {fileList.length} 个文件
+            当前待上传：{fileList.length} 个文件
           </Typography.Text>
         </Space>
       </Space>

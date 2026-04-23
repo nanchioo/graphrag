@@ -151,86 +151,118 @@ export function ModelProfileForm({
       destroyOnClose
     >
       <Form form={form} layout="vertical" onFinish={(values) => void onSubmit(values)}>
-        <Form.Item label="快捷预设">
-          <Select
-            allowClear
-            placeholder="选择后自动填入推荐配置"
-            options={presetOptions.map((preset) => ({
-              label: preset.label,
-              value: preset.value,
-            }))}
-            onChange={(value) => {
-              if (typeof value === "string") {
-                applyPreset(value);
-              }
-            }}
-          />
-        </Form.Item>
-        <Form.Item<ModelProfileFormValues>
-          label="Provider"
-          name="provider"
-          rules={[{ required: true }]}
-        >
-          <Select
-            options={[
-              { label: "OpenAI", value: "openai" },
-              { label: "Azure OpenAI", value: "azure" },
-              { label: "Ollama", value: "ollama" },
-            ]}
-          />
-        </Form.Item>
-        <Form.Item<ModelProfileFormValues>
-          label="显示名称"
-          name="name"
-          rules={[{ required: true }]}
-        >
-          <Input placeholder="例如: OpenAI Default" />
-        </Form.Item>
-        <Form.Item<ModelProfileFormValues>
-          label="Base URL"
-          name="base_url"
-          rules={[{ required: true }]}
-        >
-          <Input placeholder="https://api.openai.com/v1" />
-        </Form.Item>
-        <Typography.Paragraph className="muted-text" style={{ marginTop: -8 }}>
-          支持通义、DeepSeek、Kimi、智谱、SiliconFlow 等 OpenAI 兼容预设。
-          Embedding 模型现在会默认预填，你也可以按平台能力手动改成更合适的值。
-        </Typography.Paragraph>
-        <Form.Item<ModelProfileFormValues> label="API Key" name="api_key">
-          <Input.Password
-            placeholder={mode === "edit" ? "留空表示不修改" : "输入 API Key"}
-          />
-        </Form.Item>
-        <Form.Item<ModelProfileFormValues>
-          label="模型名称"
-          name="model_name"
-          rules={[{ required: true }]}
-        >
-          <Input placeholder="gpt-4.1-mini" />
-        </Form.Item>
-        <Form.Item<ModelProfileFormValues> label="Embedding 模型" name="embedding_model_name">
-          <Input placeholder="text-embedding-3-small" />
-        </Form.Item>
-        <Form.Item<ModelProfileFormValues> label="API Version" name="api_version">
-          <Input placeholder="仅 Azure 需要时填写" />
-        </Form.Item>
-        <Form.Item<ModelProfileFormValues>
-          label="设为默认"
-          name="is_default"
-          valuePropName="checked"
-        >
-          <Switch />
-        </Form.Item>
-        {mode === "edit" ? (
+        <section className="profile-form-section">
+          <Typography.Title level={5} className="section-heading">
+            预设
+          </Typography.Title>
+          <Form.Item label="快捷预设">
+            <Select
+              allowClear
+              placeholder="选择后自动填入推荐配置"
+              options={presetOptions.map((preset) => ({
+                label: preset.label,
+                value: preset.value,
+              }))}
+              onChange={(value) => {
+                if (typeof value === "string") {
+                  applyPreset(value);
+                }
+              }}
+            />
+          </Form.Item>
+        </section>
+
+        <section className="profile-form-section">
+          <Typography.Title level={5} className="section-heading">
+            连接
+          </Typography.Title>
+          <div className="profile-form-grid">
+            <Form.Item<ModelProfileFormValues>
+              label="Provider"
+              name="provider"
+              rules={[{ required: true }]}
+            >
+              <Select
+                options={[
+                  { label: "OpenAI", value: "openai" },
+                  { label: "Azure OpenAI", value: "azure" },
+                  { label: "Ollama", value: "ollama" },
+                ]}
+              />
+            </Form.Item>
+            <Form.Item<ModelProfileFormValues>
+              label="显示名称"
+              name="name"
+              rules={[{ required: true }]}
+            >
+              <Input placeholder="例如：OpenAI Default" />
+            </Form.Item>
+          </div>
           <Form.Item<ModelProfileFormValues>
-            label="清空已保存 API Key"
-            name="clear_api_key"
+            label="Base URL"
+            name="base_url"
+            rules={[{ required: true }]}
+          >
+            <Input placeholder="https://api.openai.com/v1" />
+          </Form.Item>
+          <Typography.Paragraph className="muted-text" style={{ marginTop: -8 }}>
+            支持通义、DeepSeek、Kimi、智谱、SiliconFlow 等 OpenAI 兼容预设。
+            Embedding 模型现在会默认预填，你也可以按平台能力手动改成更合适的值。
+          </Typography.Paragraph>
+          <div className="profile-form-grid">
+            <Form.Item<ModelProfileFormValues> label="API Key" name="api_key">
+              <Input.Password
+                placeholder={mode === "edit" ? "留空表示不修改" : "输入 API Key"}
+              />
+            </Form.Item>
+            <Form.Item<ModelProfileFormValues> label="API Version" name="api_version">
+              <Input placeholder="Azure 等平台需要时填写" />
+            </Form.Item>
+          </div>
+        </section>
+
+        <section className="profile-form-section">
+          <Typography.Title level={5} className="section-heading">
+            能力
+          </Typography.Title>
+          <div className="profile-form-grid">
+            <Form.Item<ModelProfileFormValues>
+              label="模型名称"
+              name="model_name"
+              rules={[{ required: true }]}
+            >
+              <Input placeholder="gpt-4.1-mini" />
+            </Form.Item>
+            <Form.Item<ModelProfileFormValues>
+              label="Embedding Model"
+              name="embedding_model_name"
+            >
+              <Input placeholder="text-embedding-3-small" />
+            </Form.Item>
+          </div>
+        </section>
+
+        <section className="profile-form-section">
+          <Typography.Title level={5} className="section-heading">
+            默认值
+          </Typography.Title>
+          <Form.Item<ModelProfileFormValues>
+            label="设为默认"
+            name="is_default"
             valuePropName="checked"
           >
             <Switch />
           </Form.Item>
-        ) : null}
+          {mode === "edit" ? (
+            <Form.Item<ModelProfileFormValues>
+              label="清空已保存 API Key"
+              name="clear_api_key"
+              valuePropName="checked"
+            >
+              <Switch />
+            </Form.Item>
+          ) : null}
+        </section>
       </Form>
     </Modal>
   );

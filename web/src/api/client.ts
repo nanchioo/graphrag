@@ -2,6 +2,7 @@ import type {
   ApiResponse,
   DeleteArtifactsPayload,
   DeleteGraphPayload,
+  ModelProfileConnectionPayload,
   DeleteModelProfilePayload,
   DeleteTextUnitPayload,
   GraphBuildPayload,
@@ -181,6 +182,14 @@ export async function deleteModelProfile(
 ): Promise<DeleteModelProfilePayload> {
   return requestJson<DeleteModelProfilePayload>(`/api/config/models/${profileId}`, {
     method: "DELETE",
+  });
+}
+
+export async function connectModelProfile(
+  profileId: string,
+): Promise<ModelProfileConnectionPayload> {
+  return requestJson<ModelProfileConnectionPayload>(`/api/config/models/${profileId}/connect`, {
+    method: "POST",
   });
 }
 

@@ -13,6 +13,7 @@ function excerpt(text: string, maxLength = 140) {
   if (text.length <= maxLength) {
     return text;
   }
+
   return `${text.slice(0, maxLength)}...`;
 }
 
@@ -25,7 +26,7 @@ export function TextUnitList({
   return (
     <Card className="surface-card analysis-card analysis-text-unit-list" title="文本切片">
       {items.length === 0 ? (
-        <Empty description="当前图谱还没有可展示的文本切片" />
+        <Empty description="当前图谱还没有可展示的文本切片。" />
       ) : (
         <Table
           rowKey="id"

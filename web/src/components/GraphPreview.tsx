@@ -39,7 +39,7 @@ export function GraphPreview({ preview, reports, loading = false }: GraphPreview
             color: "#203040",
           },
           lineStyle: {
-            color: "rgba(15, 23, 42, 0.20)",
+            color: "rgba(30, 64, 175, 0.28)",
             curveness: 0.08,
           },
           data: preview.nodes.map((node) => ({
@@ -49,7 +49,7 @@ export function GraphPreview({ preview, reports, loading = false }: GraphPreview
             category: node.type ?? "unknown",
             symbolSize: Math.max(26, (node.rank ?? 1) * 6),
             itemStyle: {
-              color: node.type === "person" ? "#0f8ea8" : "#111827",
+              color: node.type === "person" ? "#3b82f6" : "#1e40af",
             },
           })),
           links: preview.edges.map((edge) => ({
@@ -79,23 +79,25 @@ export function GraphPreview({ preview, reports, loading = false }: GraphPreview
     <Card className="surface-card analysis-card analysis-graph-preview" title="图谱预览">
       <Spin spinning={loading}>
         {!preview ? (
-          <Empty description="构建完成后可查看节点关系预览" />
+          <Empty description="构建完成后可查看图谱预览。" />
         ) : (
           <div className="graph-preview-shell">
-            <Row gutter={[12, 12]}>
-              <Col span={12}>
-                <Statistic title="预览节点" value={preview.summary.preview_nodes} />
-              </Col>
-              <Col span={12}>
-                <Statistic title="预览关系" value={preview.summary.preview_edges} />
-              </Col>
-              <Col span={12}>
-                <Statistic title="社区数量" value={preview.summary.total_communities} />
-              </Col>
-              <Col span={12}>
-                <Statistic title="报告数量" value={preview.summary.total_reports} />
-              </Col>
-            </Row>
+            <div className="analysis-preview-summary">
+              <Row gutter={[12, 12]}>
+                <Col span={12}>
+                  <Statistic title="预览节点" value={preview.summary.preview_nodes} />
+                </Col>
+                <Col span={12}>
+                  <Statistic title="预览关系" value={preview.summary.preview_edges} />
+                </Col>
+                <Col span={12}>
+                  <Statistic title="社区数量" value={preview.summary.total_communities} />
+                </Col>
+                <Col span={12}>
+                  <Statistic title="报告数量" value={preview.summary.total_reports} />
+                </Col>
+              </Row>
+            </div>
             <Tabs
               items={[
                 {
@@ -120,13 +122,13 @@ export function GraphPreview({ preview, reports, loading = false }: GraphPreview
                               <Typography.Paragraph style={{ marginBottom: 0 }}>
                                 {report.summary}
                               </Typography.Paragraph>
-                              {report.rank ? <Tag color="blue">Rank {report.rank}</Tag> : null}
+                              {report.rank ? <Tag color="blue">排名 {report.rank}</Tag> : null}
                             </Space>
                           </List.Item>
                         )}
                       />
                     ) : (
-                      <Empty description="暂无社区报告" />
+                      <Empty description="暂无社区报告。" />
                     ),
                 },
               ]}

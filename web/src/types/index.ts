@@ -45,6 +45,7 @@ export interface GraphCreateRequest {
   model_profile_id?: string;
   projects_root?: string;
   chunking?: GraphChunkingCreateRequest;
+  embed_batch_size?: number;
 }
 
 export interface SourceFileItem {
@@ -229,6 +230,11 @@ export interface ModelProfileUpdateRequest {
 
 export interface DeleteModelProfilePayload {
   deleted_id: string;
+}
+
+export interface ModelProfileConnectionPayload {
+  profile_id: string;
+  connected: boolean;
 }
 
 export interface QueryRequest {

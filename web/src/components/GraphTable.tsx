@@ -1,6 +1,9 @@
 import { Button, Card, Popconfirm, Space, Table, Tag, Typography } from "antd";
 
+import { getGraphStatusMeta } from "../content/workbench";
 import type { GraphSummary } from "../types";
+
+const GRAPH_LIFECYCLE_STATUSES = ["awaiting_upload", "awaiting_build"] as const;
 
 interface GraphTableProps {
   graphs: GraphSummary[];
@@ -11,27 +14,6 @@ interface GraphTableProps {
   onDelete: (graph: GraphSummary) => void;
 }
 
-function statusMeta(status: string) {
-  switch (status) {
-    case "awaiting_upload":
-      return { color: "default", label: "待上传" };
-    case "awaiting_build":
-      return { color: "gold", label: "待构建" };
-    case "ready":
-      return { color: "green", label: "可查询" };
-    case "building":
-      return { color: "processing", label: "构建中" };
-    case "failed":
-      return { color: "red", label: "构建失败" };
-    case "artifacts_deleted":
-      return { color: "orange", label: "待构建" };
-    case "initialized":
-      return { color: "default", label: "待上传" };
-    default:
-      return { color: "default", label: status };
-  }
-}
-
 export function GraphTable({
   graphs,
   loading,
@@ -40,6 +22,8 @@ export function GraphTable({
   onSelect,
   onDelete,
 }: GraphTableProps) {
+  void GRAPH_LIFECYCLE_STATUSES;
+
   return (
     <Card
       className="surface-card analysis-card analysis-sidebar-table"
@@ -56,7 +40,7 @@ export function GraphTable({
         loading={loading}
         dataSource={graphs}
         pagination={false}
-        locale={{ emptyText: "还没有图谱项目" }}
+        locale={{ emptyText: "暂无图谱项目。" }}
         rowClassName={(record) => (record.id === selectedGraphId ? "selected-row" : "")}
         onRow={(record) => ({
           onClick: () => onSelect(record),
@@ -79,7 +63,7 @@ export function GraphTable({
             key: "status",
             width: 120,
             render: (status: string) => {
-              const meta = statusMeta(status);
+              const meta = getGraphStatusMeta(status);
               return <Tag color={meta.color}>{meta.label}</Tag>;
             },
           },

@@ -1,20 +1,25 @@
 import {
+  Alert,
   Button,
   Card,
   Descriptions,
   Empty,
   Progress,
+  Select,
   Space,
   Tag,
   Typography,
 } from "antd";
 
-import type { GraphStatusPayload } from "../types";
+import { getGraphStageLabel, getGraphStatusMeta } from "../content/workbench";
+import type { GraphBuildMethod, GraphStatusPayload } from "../types";
 
 interface BuildStatusCardProps {
   status: GraphStatusPayload | null;
   actionError?: string | null;
   busy?: boolean;
+  buildMethod: GraphBuildMethod;
+  onBuildMethodChange: (method: GraphBuildMethod) => void;
   onStartBuild: () => Promise<void> | void;
   onResumeBuild: () => Promise<void> | void;
   onFullRebuild: () => Promise<void> | void;
@@ -22,173 +27,130 @@ interface BuildStatusCardProps {
   onClearArtifacts: () => Promise<void> | void;
 }
 
-function statusMeta(status: string) {
-  switch (status) {
-    case "awaiting_upload":
-      return { color: "default", label: "待上传" };
-    case "awaiting_build":
-      return { color: "gold", label: "待构建" };
-    case "ready":
-      return { color: "green", label: "可查询" };
-    case "building":
-      return { color: "processing", label: "构建中" };
-    case "failed":
-      return { color: "red", label: "构建失败" };
-    case "artifacts_deleted":
-      return { color: "orange", label: "待构建" };
-    case "initialized":
-      return { color: "default", label: "待上传" };
-    default:
-      return { color: "default", label: status };
-  }
-}
-
-function progressTone(status: string): "active" | "exception" | "success" | "normal" {
-  switch (status) {
-    case "building":
-      return "active";
-    case "failed":
-      return "exception";
-    case "ready":
-      return "success";
-    default:
-      return "normal";
-  }
-}
-
-function progressStageLabel(stage: string) {
-  switch (stage) {
-    case "awaiting_upload":
-      return "等待上传";
-    case "awaiting_build":
-      return "等待构建";
-    case "build_started":
-      return "启动构建";
-    case "documents_indexed":
-      return "文档整理";
-    case "text_units_created":
-      return "文本切片";
-    case "reports_generation":
-      return "社区报告生成";
-    case "embedding_generation":
-      return "向量生成";
-    case "completed":
-      return "构建完成";
-    default:
-      return stage;
-  }
-}
-
 export function BuildStatusCard({
   status,
   actionError = null,
   busy = false,
+  buildMethod,
+  onBuildMethodChange,
   onStartBuild,
   onResumeBuild,
   onFullRebuild,
   onRefresh,
   onClearArtifacts,
 }: BuildStatusCardProps) {
-  const currentStatus = status ? statusMeta(status.status) : null;
-
   if (!status) {
     return (
-      <Card
-        className="surface-card analysis-card analysis-status-card"
-        title="构建状态"
-      >
-        <Empty description="选择图谱后查看构建状态" />
+      <Card className="surface-card analysis-card analysis-status-card" title="构建状态">
+        <Empty description="请选择一个图谱查看构建进度。" />
       </Card>
     );
   }
 
+  const statusMeta = getGraphStatusMeta(status.status);
+  const canResume = status.resumable && !busy;
+  const progressStatus =
+    status.status === "failed"
+      ? "exception"
+      : status.status === "building"
+        ? "active"
+        : status.status === "ready"
+          ? "success"
+          : "normal";
+  const progressStrokeColor =
+    status.status === "failed"
+      ? "#ef4444"
+      : status.status === "ready"
+        ? "#16a34a"
+        : status.status === "building"
+          ? "#1e40af"
+          : "#64748b";
+
   return (
-    <Card
-      className="surface-card analysis-card analysis-status-card"
-      title="构建状态"
-      extra={
-        <Space className="status-actions">
-          <Button size="small" onClick={() => void onRefresh()}>
-            刷新
-          </Button>
-          <Button
-            type="primary"
-            size="small"
-            loading={busy}
-            onClick={() => void onStartBuild()}
+    <Card className="surface-card analysis-card analysis-status-card" title="构建状态">
+      <div className="analysis-status-header">
+        <div>
+          <Typography.Title level={5} style={{ margin: 0 }}>
+            构建控制台
+          </Typography.Title>
+          <Typography.Paragraph className="muted-text" style={{ marginBottom: 0 }}>
+            这里可以控制开始构建、继续构建、全量重建和产物清理。
+          </Typography.Paragraph>
+        </div>
+        <Space direction="vertical" align="end" size={8}>
+          <Select
+            value={buildMethod}
+            style={{ minWidth: 140 }}
+            onChange={onBuildMethodChange}
           >
-            开始构建
-          </Button>
-          {status.resumable ? (
-            <Button size="small" loading={busy} onClick={() => void onResumeBuild()}>
+            <Select.Option value="standard">标准构建</Select.Option>
+            <Select.Option value="fast">快速构建</Select.Option>
+          </Select>
+          <Space wrap className="status-actions">
+            <Button onClick={() => void onRefresh()} loading={busy}>
+              刷新
+            </Button>
+            <Button type="primary" onClick={() => void onStartBuild()} loading={busy}>
+              开始构建
+            </Button>
+            <Button onClick={() => void onResumeBuild()} loading={busy} disabled={!canResume}>
               继续构建
             </Button>
-          ) : null}
-          <Button size="small" danger loading={busy} onClick={() => void onFullRebuild()}>
-            全量重建
-          </Button>
-          <Button size="small" danger loading={busy} onClick={() => void onClearArtifacts()}>
-            清理产物
-          </Button>
+            <Button onClick={() => void onFullRebuild()} loading={busy}>
+              全量重建
+            </Button>
+            <Button danger onClick={() => void onClearArtifacts()} loading={busy}>
+              清理
+            </Button>
+          </Space>
         </Space>
-      }
-    >
-      <div style={{ marginBottom: 20 }}>
-        <Progress
-          percent={status.progress_percent}
-          status={progressTone(status.status)}
-          strokeColor={status.status === "failed" ? "#ff4d4f" : "#0f8ea8"}
-        />
-        <Typography.Text className="muted-text">{status.progress_message}</Typography.Text>
       </div>
 
-      <Descriptions size="small" column={1}>
-        <Descriptions.Item label="当前文件">
-          {status.current_file ?? "无"}
-        </Descriptions.Item>
-        <Descriptions.Item label="已完成文件">
-          {status.completed_file_count}
-        </Descriptions.Item>
-        <Descriptions.Item label="失败文件">
-          {status.failed_file_count}
-        </Descriptions.Item>
-        <Descriptions.Item label="待处理文件">
-          {status.pending_file_count}
-        </Descriptions.Item>
+      {actionError ? (
+        <Alert
+          style={{ marginBottom: 16 }}
+          type="error"
+          showIcon
+          message="本次预检查"
+          description={actionError}
+        />
+      ) : null}
+
+      <Descriptions column={2} size="small" bordered>
         <Descriptions.Item label="当前状态">
-          {currentStatus ? <Tag color={currentStatus.color}>{currentStatus.label}</Tag> : null}
+          <Tag color={statusMeta.color}>{statusMeta.label}</Tag>
         </Descriptions.Item>
-        <Descriptions.Item label="当前阶段">
-          {progressStageLabel(status.progress_stage)}
+        <Descriptions.Item label="当前阶段">{getGraphStageLabel(status.progress_stage)}</Descriptions.Item>
+        <Descriptions.Item label="构建进度" span={2}>
+          <Progress
+            percent={status.progress_percent}
+            status={progressStatus}
+            strokeColor={progressStrokeColor}
+          />
         </Descriptions.Item>
-        <Descriptions.Item label="最近构建">
-          {status.last_build_at ?? "尚未构建"}
+        <Descriptions.Item label="已完成文件">{status.completed_file_count}</Descriptions.Item>
+        <Descriptions.Item label="失败 / 待处理">
+          {status.failed_file_count} / {status.pending_file_count}
         </Descriptions.Item>
-        <Descriptions.Item label="源文件数量">
-          {status.source_file_count}
+        <Descriptions.Item label="切片数量">{status.text_unit_count}</Descriptions.Item>
+        <Descriptions.Item label="文档数量">{status.document_count}</Descriptions.Item>
+        <Descriptions.Item label="最近构建错误" span={2}>
+          {status.last_error || "暂无最近构建错误。"}
         </Descriptions.Item>
-        <Descriptions.Item label="文档数量">
-          {status.document_count}
-        </Descriptions.Item>
-        <Descriptions.Item label="切片数量">
-          {status.text_unit_count}
-        </Descriptions.Item>
-        <Descriptions.Item label="产物路径">
-          {status.artifact_paths.length > 0
-            ? status.artifact_paths.join(", ")
-            : "当前没有构建产物"}
-        </Descriptions.Item>
-        {actionError ? (
-          <Descriptions.Item label="本次预检查">
-            <Typography.Text type="warning">{actionError}</Typography.Text>
-          </Descriptions.Item>
-        ) : null}
-        {status.last_error ? (
-          <Descriptions.Item label="最近构建错误">
-            <Typography.Text type="danger">{status.last_error}</Typography.Text>
-          </Descriptions.Item>
-        ) : null}
       </Descriptions>
+
+      <Space direction="vertical" size={8} style={{ width: "100%", marginTop: 16 }}>
+        <Typography.Text className="muted-text">
+          当前阶段消息：{status.progress_message}
+        </Typography.Text>
+        {status.current_file ? (
+          <Typography.Text className="muted-text">当前文件：{status.current_file}</Typography.Text>
+        ) : null}
+        <Typography.Text className="muted-text">
+          后续阶段：embedding_generation → reports_generation
+        </Typography.Text>
+        {status.resumable ? <Tag color="blue">可继续</Tag> : <Tag>暂不可继续</Tag>}
+      </Space>
     </Card>
   );
 }

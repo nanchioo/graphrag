@@ -1,14 +1,16 @@
-import { Card, Collapse, Empty, Space, Typography, message } from "antd";
+﻿import { Card, Collapse, Empty, Space, Typography, message } from "antd";
 import { useEffect, useState } from "react";
 
 import { getGraphs, queryGraph } from "../api/client";
 import { QueryPanel } from "../components/QueryPanel";
+import { getQueryContextLabel } from "../content/workbench";
 import type { GraphSummary, QueryRequest, QueryResponsePayload } from "../types";
 
 function renderAnswer(answer: QueryResponsePayload["answer"]) {
   if (typeof answer === "string") {
     return answer;
   }
+
   return JSON.stringify(answer, null, 2);
 }
 
@@ -31,7 +33,21 @@ function renderContextValue(value: unknown) {
     );
   }
 
-  return <Typography.Paragraph style={{ marginBottom: 0 }}>{String(value)}</Typography.Paragraph>;
+  if (value !== null && typeof value === "object") {
+    return (
+      <Typography.Paragraph
+        style={{ marginBottom: 0, whiteSpace: "pre-wrap", wordBreak: "break-word" }}
+      >
+        {JSON.stringify(value, null, 2)}
+      </Typography.Paragraph>
+    );
+  }
+
+  return (
+    <Typography.Paragraph style={{ marginBottom: 0 }}>
+      {String(value)}
+    </Typography.Paragraph>
+  );
 }
 
 export function QueryPage() {
@@ -56,6 +72,7 @@ export function QueryPage() {
   async function handleSubmit(payload: QueryRequest) {
     try {
       setQueryLoading(true);
+      setResult(null);
       const response = await queryGraph(payload);
       setResult(response);
       messageApi.success("查询完成");
@@ -77,38 +94,49 @@ export function QueryPage() {
       {contextHolder}
       <div className="page-hero analysis-hero">
         <div>
-          <Typography.Title level={3}>问答控制台</Typography.Title>
+          <Typography.Title level={3}>问答工作台</Typography.Title>
           <Typography.Paragraph className="muted-text">
             选择目标图谱和查询模式，直接调用 GraphRAG 的 local、global、basic、drift 查询能力。
           </Typography.Paragraph>
         </div>
       </div>
 
-      <QueryPanel graphs={graphs} loading={queryLoading || loading} onSubmit={handleSubmit} />
+      <div className="analysis-layout analysis-layout--query">
+        <QueryPanel graphs={graphs} loading={queryLoading || loading} onSubmit={handleSubmit} />
 
-      <Card className="surface-card answer-card analysis-card analysis-query-result" title="查询结果">
-        {result ? (
-          <Space direction="vertical" size="large" style={{ width: "100%" }}>
-            <div>
-              <Typography.Text className="muted-text">
-                图谱 {result.graph_id} · 模式 {result.mode}
-              </Typography.Text>
-              <Typography.Paragraph className="answer-text">
-                {renderAnswer(result.answer)}
-              </Typography.Paragraph>
-            </div>
-            <Collapse
-              items={contextEntries.map(([key, value]) => ({
-                key,
-                label: key,
-                children: renderContextValue(value),
-              }))}
-            />
-          </Space>
-        ) : (
-          <Empty description="先在上方输入问题并发起一次查询" />
-        )}
-      </Card>
+        <div className="analysis-query-results">
+          <Card className="surface-card answer-card analysis-card analysis-query-result" title="回答">
+            {result ? (
+              <Space direction="vertical" size="large" style={{ width: "100%" }}>
+                <div>
+                  <Typography.Text className="muted-text">
+                    图谱 {result.graph_id} · 模式 {result.mode}
+                  </Typography.Text>
+                  <Typography.Paragraph className="answer-text">
+                    {renderAnswer(result.answer)}
+                  </Typography.Paragraph>
+                </div>
+              </Space>
+            ) : (
+              <Empty description="请先在左侧输入问题并发起查询" />
+            )}
+          </Card>
+
+          <Card className="surface-card analysis-card analysis-query-context" title="上下文">
+            {result ? (
+              <Collapse
+                items={contextEntries.map(([key, value]) => ({
+                  key,
+                  label: getQueryContextLabel(key),
+                  children: renderContextValue(value),
+                }))}
+              />
+            ) : (
+              <Empty description="查询完成后，这里会显示检索上下文" />
+            )}
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }

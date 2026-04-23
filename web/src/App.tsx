@@ -8,15 +8,10 @@ import {
   useNavigate,
 } from "react-router-dom";
 
+import { navigationItems } from "./content/workbench";
 import { GraphManagePage } from "./pages/GraphManagePage";
 import { ModelConfigPage } from "./pages/ModelConfigPage";
 import { QueryPage } from "./pages/QueryPage";
-
-const navigationItems = [
-  { key: "/graphs", label: "图谱管理" },
-  { key: "/models", label: "模型配置" },
-  { key: "/query", label: "问答控制台" },
-];
 
 function AppShell() {
   const location = useLocation();
@@ -27,9 +22,9 @@ function AppShell() {
 
   return (
     <Layout className="app-shell analysis-shell">
-      <Layout.Header className="app-header analysis-header">
+      <header className="app-header analysis-header">
         <div className="brand-block analysis-brand">
-          <Typography.Text className="brand-kicker analysis-kicker">GraphRAG Workbench</Typography.Text>
+          <span className="brand-kicker analysis-kicker">GraphRAG Workbench</span>
           <Typography.Title level={2} className="brand-title">
             知识图谱管理后台
           </Typography.Title>
@@ -41,7 +36,7 @@ function AppShell() {
           className="nav-menu analysis-nav-menu"
           onClick={({ key }) => navigate(key)}
         />
-      </Layout.Header>
+      </header>
       <Layout.Content className="app-content">
         <Routes>
           <Route path="/" element={<Navigate to="/graphs" replace />} />
