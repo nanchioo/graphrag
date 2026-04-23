@@ -11,6 +11,7 @@ from typing import Any
 
 from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -24,6 +25,8 @@ APP_VERSION = "0.1.0"
 SERVICE_NAME = "graphrag-admin-api"
 WEB_DIST_DIR = Path("web/dist")
 CONSOLE_PREFIX = "/console"
+CORS_ALLOW_ORIGINS = ["*"]
+CORS_ALLOW_METHODS = ["DELETE", "GET", "OPTIONS", "PATCH", "POST", "PUT"]
 
 logger = logging.getLogger(__name__)
 
@@ -113,6 +116,13 @@ def create_app(web_dist_dir: Path | None = None) -> FastAPI:
         title=APP_NAME,
         version=APP_VERSION,
         description="FastAPI wrapper layer for GraphRAG management and query APIs.",
+    )
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=CORS_ALLOW_ORIGINS,
+        allow_credentials=False,
+        allow_methods=CORS_ALLOW_METHODS,
+        allow_headers=["*"],
     )
     app.add_exception_handler(HTTPException, http_exception_handler)
     app.add_exception_handler(RequestValidationError, validation_exception_handler)

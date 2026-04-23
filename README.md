@@ -45,21 +45,21 @@ Detailed operator documentation is available in [graphrag-admin-console-guide.md
 ### Start The Backend
 
 ```powershell
-uvicorn main:app --reload
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
 If `uvicorn` is not available on `PATH` in Windows PowerShell, run:
 
 ```powershell
 $env:PATH = "$PWD\.venv\Scripts;$env:PATH"
-uvicorn main:app --reload
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
 Once the backend is running:
 
-- API root: `http://127.0.0.1:8000/`
-- OpenAPI docs: `http://127.0.0.1:8000/docs`
-- Admin console: `http://127.0.0.1:8000/console/`
+- API root: `http://127.0.0.1:8000/` or `http://<your-lan-ip>:8000/`
+- OpenAPI docs: `http://127.0.0.1:8000/docs` or `http://<your-lan-ip>:8000/docs`
+- Admin console: `http://127.0.0.1:8000/console/` or `http://<your-lan-ip>:8000/console/`
 
 ### Start The Frontend In Dev Mode
 
