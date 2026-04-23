@@ -211,6 +211,29 @@ def test_create_graph_accepts_chunking_config_and_persists_it_to_workspace(
     assert "encoding_model: cl100k_base" in settings_text
 
 
+def test_create_graph_accepts_embed_batch_size_and_persists_it_to_workspace(
+    graph_client: tuple[
+        TestClient, Path, Path, AppConfigService, GraphRegistryService
+    ],
+):
+    client, projects_root, _, _, _ = graph_client
+
+    response = client.post(
+        "/api/graph",
+        json={
+            "name": "Batch Sized Graph",
+            "embed_batch_size": 24,
+        },
+    )
+
+    assert response.status_code == 201
+    graph_id = response.json()["data"]["id"]
+    settings_text = (projects_root / graph_id / "settings.yaml").read_text(
+        encoding="utf-8"
+    )
+    assert "batch_size: 24" in settings_text
+
+
 def test_create_graph_allows_per_request_projects_root_override(
     tmp_path: Path,
     graph_client: tuple[
@@ -275,6 +298,24 @@ def test_create_graph_rejects_chunk_overlap_that_is_not_smaller_than_chunk_size(
                 "overlap": 128,
                 "encoding_model": "o200k_base",
             },
+        },
+    )
+
+    assert response.status_code == 422
+
+
+def test_create_graph_rejects_non_positive_embed_batch_size(
+    graph_client: tuple[
+        TestClient, Path, Path, AppConfigService, GraphRegistryService
+    ],
+):
+    client, _, _, _, _ = graph_client
+
+    response = client.post(
+        "/api/graph",
+        json={
+            "name": "Invalid Batch Graph",
+            "embed_batch_size": 0,
         },
     )
 

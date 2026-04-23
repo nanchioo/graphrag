@@ -21,6 +21,9 @@ class NoOpModelProfileValidationService:
     def validate_update_request(self, *_args, **_kwargs) -> None:
         return None
 
+    def validate_connection(self, *_args, **_kwargs) -> None:
+        return None
+
 
 class RejectingModelProfileValidationService:
     """Test validator that rejects model profile saves with a fixed error."""
@@ -35,6 +38,12 @@ class RejectingModelProfileValidationService:
         )
 
     def validate_update_request(self, *_args, **_kwargs) -> None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=self._message,
+        )
+
+    def validate_connection(self, *_args, **_kwargs) -> None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=self._message,
@@ -329,4 +338,37 @@ def test_update_model_profile_rejects_invalid_precheck_without_persisting(
             }
         ],
         "total": 1,
+    }
+
+
+def test_connect_model_profile_runs_validation_for_saved_profile(
+    client_and_store_path: tuple[TestClient, Path],
+):
+    client, _ = client_and_store_path
+
+    create_response = client.post(
+        "/api/config/models",
+        json={
+            "provider": "openai",
+            "name": "DashScope",
+            "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+            "api_key": "sk-dashscope-test",
+            "model_name": "qwen3.6-plus",
+            "embedding_model_name": "text-embedding-v3",
+            "is_default": False,
+        },
+    )
+    assert create_response.status_code == 201
+    profile_id = create_response.json()["data"]["id"]
+
+    response = client.post(f"/api/config/models/{profile_id}/connect")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "success": True,
+        "message": "Model profile connection succeeded.",
+        "data": {
+            "profile_id": profile_id,
+            "connected": True,
+        },
     }

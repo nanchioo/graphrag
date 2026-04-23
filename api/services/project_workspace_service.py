@@ -32,6 +32,7 @@ class ProjectWorkspaceService:
         model: str,
         embedding_model: str,
         chunking: GraphChunkingCreateRequest | None = None,
+        embed_batch_size: int | None = None,
     ) -> None:
         """Create a standard GraphRAG project workspace."""
         self._validate_workspace_target(root_dir)
@@ -42,7 +43,11 @@ class ProjectWorkspaceService:
             embedding_model=embedding_model,
         )
         self._prompt_localization_service.localize_workspace_prompts(root_dir)
-        self._write_chunking_settings(root_dir, chunking or DEFAULT_CHUNKING_CONFIG)
+        self._write_workspace_settings(
+            root_dir=root_dir,
+            chunking=chunking or DEFAULT_CHUNKING_CONFIG,
+            embed_batch_size=embed_batch_size,
+        )
 
     def _validate_workspace_target(self, root_dir: Path) -> None:
         parent_dir = root_dir.parent
@@ -59,14 +64,17 @@ class ProjectWorkspaceService:
                 detail=f"Graph workspace '{root_dir}' already exists.",
             )
 
-    def _write_chunking_settings(
+    def _write_workspace_settings(
         self,
         root_dir: Path,
         chunking: GraphChunkingCreateRequest,
+        embed_batch_size: int | None,
     ) -> None:
         settings_path = root_dir / "settings.yaml"
         settings_data = yaml.safe_load(settings_path.read_text(encoding="utf-8"))
         settings_data["chunking"] = chunking.model_dump()
+        if embed_batch_size is not None:
+            settings_data.setdefault("embed_text", {})["batch_size"] = embed_batch_size
         settings_path.write_text(
             yaml.safe_dump(settings_data, sort_keys=False, allow_unicode=True),
             encoding="utf-8",

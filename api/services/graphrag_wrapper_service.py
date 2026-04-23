@@ -613,6 +613,14 @@ class GraphRagWrapperService:
                 "向量生成失败: 当前模型服务拒绝了 encoding_format 参数, "
                 "请将 embedding 编码格式设置为 float 或 base64。"
             )
+        if (
+            "AllocationQuota.FreeTierOnly" in log_text
+            or "The free tier of the model has been exhausted" in log_text
+        ):
+            return (
+                "Model API quota exhausted for the current free-tier setting. "
+                "Disable free-tier-only mode or use a paid-capable model profile."
+            )
         if "Incorrect API key provided" in log_text or "invalid_api_key" in log_text:
             return "Model API authentication failed (invalid_api_key)."
         if "Invalid Authentication" in log_text or "AuthenticationError" in log_text:

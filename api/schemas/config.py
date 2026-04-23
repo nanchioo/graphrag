@@ -72,3 +72,10 @@ class DeleteModelProfilePayload(BaseModel):
     """Delete payload for model profiles."""
 
     deleted_id: str
+
+
+class ModelProfileConnectionPayload(BaseModel):
+    """Connection test payload for a saved model profile."""
+
+    profile_id: str
+    connected: bool = True

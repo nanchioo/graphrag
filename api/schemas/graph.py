@@ -55,6 +55,7 @@ class GraphCreateRequest(BaseModel):
     model_profile_id: str | None = None
     projects_root: str | None = None
     chunking: GraphChunkingCreateRequest | None = None
+    embed_batch_size: int | None = None
 
     @field_validator("projects_root")
     @classmethod
@@ -64,6 +65,15 @@ class GraphCreateRequest(BaseModel):
 
         normalized = value.strip()
         return normalized or None
+
+    @field_validator("embed_batch_size")
+    @classmethod
+    def validate_embed_batch_size(cls, value: int | None) -> int | None:
+        if value is None:
+            return None
+        if value <= 0:
+            raise ValueError("Embed batch size must be greater than 0.")
+        return value
 
 
 class GraphSummary(BaseModel):

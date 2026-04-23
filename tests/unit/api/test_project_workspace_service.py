@@ -85,6 +85,7 @@ def test_initialize_workspace_writes_custom_chunking_settings(tmp_path: Path):
             overlap=32,
             encoding_model="cl100k_base",
         ),
+        embed_batch_size=24,
     )
 
     settings_data = yaml.safe_load((root_dir / "settings.yaml").read_text(encoding="utf-8"))
@@ -95,6 +96,7 @@ def test_initialize_workspace_writes_custom_chunking_settings(tmp_path: Path):
         "overlap": 32,
         "encoding_model": "cl100k_base",
     }
+    assert settings_data["embed_text"]["batch_size"] == 24
 
 
 def test_initialize_workspace_keeps_default_chunking_when_not_overridden(

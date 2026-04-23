@@ -13,6 +13,7 @@ from api.schemas.common import ApiResponse
 from api.schemas.config import (
     DeleteModelProfilePayload,
     ModelProfileCreateRequest,
+    ModelProfileConnectionPayload,
     ModelProfileListPayload,
     ModelProfileResponse,
     ModelProfileUpdateRequest,
@@ -114,4 +115,24 @@ async def delete_model_profile(
     return ApiResponse(
         message="Model profile deleted.",
         data=app_config_service.delete_model_profile(profile_id),
+    )
+
+
+@router.post(
+    "/models/{profile_id}/connect",
+    response_model=ApiResponse[ModelProfileConnectionPayload],
+)
+async def connect_model_profile(
+    profile_id: str,
+    app_config_service: AppConfigService = Depends(get_app_config_service),
+    model_profile_validation_service: ModelProfileValidationService = Depends(
+        get_model_profile_validation_service
+    ),
+) -> ApiResponse[ModelProfileConnectionPayload]:
+    """Run an explicit connection test for a saved model profile."""
+    profile = app_config_service.get_model_profile(profile_id)
+    model_profile_validation_service.validate_connection(profile)
+    return ApiResponse(
+        message="Model profile connection succeeded.",
+        data=ModelProfileConnectionPayload(profile_id=profile_id, connected=True),
     )

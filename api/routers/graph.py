@@ -96,6 +96,7 @@ async def create_graph(
         model=completion_model,
         embedding_model=embedding_model,
         chunking=payload.chunking,
+        embed_batch_size=payload.embed_batch_size,
     )
 
     graph = graph_registry_service.create_graph(

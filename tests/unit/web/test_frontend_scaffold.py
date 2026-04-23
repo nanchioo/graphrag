@@ -264,10 +264,12 @@ def test_graph_manage_page_exposes_chunking_fields_in_create_modal():
 
     assert "GraphChunkingCreateRequest" in types_source
     assert "chunking?: GraphChunkingCreateRequest" in types_source
+    assert "embed_batch_size?: number;" in types_source
     assert 'name={["chunking", "size"]}' in page_source
     assert 'name={["chunking", "overlap"]}' in page_source
     assert 'name={["chunking", "encoding_model"]}' in page_source
     assert 'name={["chunking", "type"]}' in page_source
+    assert 'name="embed_batch_size"' in page_source
     assert "hidden" in page_source
     assert "当前仅支持 tokens 切片方式。" in page_source
     assert '<Input value={DEFAULT_CHUNKING_CONFIG.type} disabled />' in page_source
@@ -275,6 +277,7 @@ def test_graph_manage_page_exposes_chunking_fields_in_create_modal():
     assert "o200k_base" in page_source
     assert "1200" in page_source
     assert "100" in page_source
+    assert "16" in page_source
     assert "Chunk overlap must be smaller than chunk size." in page_source
 
 
@@ -434,12 +437,22 @@ def test_graph_manage_page_supports_resume_and_full_rebuild_actions():
     types_source = Path("web/src/types/index.ts").read_text(encoding="utf-8")
 
     assert 'export type GraphBuildAction = "start" | "resume"' in types_source
+    assert 'export type GraphBuildMethod = "standard" | "fast"' in types_source
     assert "resumable: boolean;" in types_source
     assert "current_file?: string | null;" in types_source
     assert "completed_file_count: number;" in types_source
     assert "failed_file_count: number;" in types_source
     assert "pending_file_count: number;" in types_source
     assert "build_status?:" in types_source
+    assert "const [buildMethod, setBuildMethod]" in page_source
+    assert "method: buildMethod" in page_source
+    assert "buildMethod={buildMethod}" in page_source
+    assert "onBuildMethodChange={setBuildMethod}" in page_source
+    assert "GraphBuildMethod" in card_source
+    assert "buildMethod: GraphBuildMethod" in card_source
+    assert "onBuildMethodChange: (method: GraphBuildMethod) => void;" in card_source
+    assert 'value="standard"' in card_source
+    assert 'value="fast"' in card_source
     assert "继续构建" in card_source
     assert "全量重建" in card_source
     assert "current_file" in card_source
@@ -456,3 +469,16 @@ def test_graph_manage_page_renders_file_level_build_tags():
     assert "attempt_count" in page_source
     assert "last_build_error" in page_source
     assert "text_unit_count" in page_source
+
+
+def test_model_config_page_exposes_connect_action_for_saved_profiles():
+    page_source = Path("web/src/pages/ModelConfigPage.tsx").read_text(encoding="utf-8")
+    api_client_source = Path("web/src/api/client.ts").read_text(encoding="utf-8")
+    types_source = Path("web/src/types/index.ts").read_text(encoding="utf-8")
+
+    assert "connectModelProfile" in api_client_source
+    assert "/api/config/models/${profileId}/connect" in api_client_source
+    assert "ModelProfileConnectionPayload" in types_source
+    assert "连接" in page_source
+    assert "handleConnectProfile" in page_source
+    assert "connectLoadingId" in page_source

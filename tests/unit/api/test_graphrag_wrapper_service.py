@@ -434,6 +434,92 @@ async def test_get_status_reports_chunk_counts_and_auth_failure_hint(
 
 
 @pytest.mark.asyncio
+async def test_get_status_reports_free_tier_quota_hint(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    registry_path = tmp_path / "graph_registry.json"
+    projects_root = tmp_path / "projects"
+    graph_registry_service = GraphRegistryService(registry_path)
+
+    graph_id = graph_registry_service.generate_graph_id("Free Tier Failure Graph")
+    root_dir = projects_root / graph_id
+    root_dir.mkdir(parents=True, exist_ok=True)
+    (root_dir / "input").mkdir(parents=True, exist_ok=True)
+    (root_dir / "output").mkdir(parents=True, exist_ok=True)
+    (root_dir / "logs").mkdir(parents=True, exist_ok=True)
+
+    pd.DataFrame(
+        [
+            {
+                "id": "doc-1",
+                "human_readable_id": 0,
+                "title": "Doc 1",
+                "text": "demo text",
+                "text_unit_ids": ["tu-1"],
+                "creation_date": "2026-04-18",
+                "raw_data": None,
+            }
+        ]
+    ).to_parquet(root_dir / "output" / "documents.parquet")
+    pd.DataFrame(
+        [{"id": "tu-1", "document_id": "doc-1", "text": "demo text", "n_tokens": 42}]
+    ).to_parquet(root_dir / "output" / "text_units.parquet")
+    (root_dir / "logs" / "indexing-engine.log").write_text(
+        (
+            "openai.PermissionDeniedError: Error code: 403 - "
+            "{'error': {'message': 'The free tier of the model has been exhausted. "
+            "If you wish to continue access the model on a paid basis, please "
+            "disable the \"use free tier only\" mode in the management console.', "
+            "'code': 'AllocationQuota.FreeTierOnly'}}\n"
+        ),
+        encoding="utf-8",
+    )
+
+    graph_registry_service.create_graph(
+        graph_id=graph_id,
+        name="Free Tier Failure Graph",
+        description="status service test",
+        root_dir=str(root_dir),
+        model_profile_id=None,
+    )
+    graph_registry_service.mark_build_failed(
+        graph_id,
+        "Graph Extraction failed. No entities detected during extraction.",
+    )
+
+    def fake_load_config(root_dir: Path):
+        return SimpleNamespace(
+            output_storage=SimpleNamespace(base_dir=str(root_dir / "output")),
+            update_output_storage=SimpleNamespace(
+                base_dir=str(root_dir / "update_output")
+            ),
+            cache=SimpleNamespace(
+                storage=SimpleNamespace(base_dir=str(root_dir / "cache"))
+            ),
+            reporting=SimpleNamespace(base_dir=str(root_dir / "logs")),
+            vector_store=SimpleNamespace(db_uri=str(root_dir / "output" / "lancedb")),
+        )
+
+    monkeypatch.setattr(
+        "api.services.graphrag_wrapper_service.load_config",
+        fake_load_config,
+    )
+
+    service = GraphRagWrapperService()
+    payload = await service.get_status(
+        graph_id=graph_id,
+        graph_registry_service=graph_registry_service,
+    )
+
+    assert payload.progress_percent == 55
+    assert payload.progress_stage == "text_units_created"
+    assert payload.last_error == (
+        "Model API quota exhausted for the current free-tier setting. "
+        "Disable free-tier-only mode or use a paid-capable model profile."
+    )
+
+
+@pytest.mark.asyncio
 async def test_get_status_prefers_recent_embedding_failure_and_reports_embedding_stage(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
