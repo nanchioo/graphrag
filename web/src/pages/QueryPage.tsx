@@ -1,10 +1,18 @@
-﻿import { Card, Collapse, Empty, Space, Typography, message } from "antd";
+import { Button, Card, Collapse, Empty, Tag, Typography, message } from "antd";
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 
 import { getGraphs, queryGraph } from "../api/client";
 import { QueryPanel } from "../components/QueryPanel";
 import { getQueryContextLabel } from "../content/workbench";
 import type { GraphSummary, QueryRequest, QueryResponsePayload } from "../types";
+
+interface QueryConversationItem {
+  id: string;
+  request: QueryRequest;
+  response: QueryResponsePayload;
+  createdAt: string;
+}
 
 function renderAnswer(answer: QueryResponsePayload["answer"]) {
   if (typeof answer === "string") {
@@ -50,12 +58,31 @@ function renderContextValue(value: unknown) {
   );
 }
 
+function createConversationId() {
+  return `query-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function formatConversationTime() {
+  return new Intl.DateTimeFormat("zh-CN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  }).format(new Date());
+}
+
+function getGraphName(graphs: GraphSummary[], graphId: string) {
+  return graphs.find((graph) => graph.id === graphId)?.name ?? graphId;
+}
+
 export function QueryPage() {
   const [messageApi, contextHolder] = message.useMessage();
+  const [searchParams] = useSearchParams();
   const [graphs, setGraphs] = useState<GraphSummary[]>([]);
   const [loading, setLoading] = useState(false);
   const [queryLoading, setQueryLoading] = useState(false);
-  const [result, setResult] = useState<QueryResponsePayload | null>(null);
+  const [conversations, setConversations] = useState<QueryConversationItem[]>([]);
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
 
   async function loadGraphs() {
     try {
@@ -72,9 +99,16 @@ export function QueryPage() {
   async function handleSubmit(payload: QueryRequest) {
     try {
       setQueryLoading(true);
-      setResult(null);
       const response = await queryGraph(payload);
-      setResult(response);
+      const nextConversation = {
+        id: createConversationId(),
+        request: payload,
+        response,
+        createdAt: formatConversationTime(),
+      };
+
+      setConversations((current) => [...current, nextConversation]);
+      setActiveConversationId(nextConversation.id);
       messageApi.success("查询完成");
     } catch (error) {
       messageApi.error(error instanceof Error ? error.message : "查询失败");
@@ -87,7 +121,14 @@ export function QueryPage() {
     void loadGraphs();
   }, []);
 
-  const contextEntries = result ? Object.entries(result.context) : [];
+  const initialGraphId = searchParams.get("graph_id");
+  const activeConversation =
+    conversations.find((conversation) => conversation.id === activeConversationId) ??
+    conversations[conversations.length - 1] ??
+    null;
+  const contextEntries = activeConversation
+    ? Object.entries(activeConversation.response.context)
+    : [];
 
   return (
     <div className="page-stack analysis-page analysis-page--query">
@@ -99,31 +140,90 @@ export function QueryPage() {
             选择目标图谱和查询模式，直接调用 GraphRAG 的 local、global、basic、drift 查询能力。
           </Typography.Paragraph>
         </div>
+        <div className="analysis-hero-meta">
+          <span className="analysis-chip analysis-chip--accent">
+            {conversations.length} rounds
+          </span>
+          <Button
+            disabled={conversations.length === 0}
+            onClick={() => {
+              setConversations([]);
+              setActiveConversationId(null);
+            }}
+          >
+            清空当前会话
+          </Button>
+        </div>
       </div>
 
       <div className="analysis-layout analysis-layout--query">
-        <QueryPanel graphs={graphs} loading={queryLoading || loading} onSubmit={handleSubmit} />
+        <QueryPanel
+          graphs={graphs}
+          loading={queryLoading || loading}
+          initialGraphId={initialGraphId}
+          onSubmit={handleSubmit}
+        />
 
         <div className="analysis-query-results">
-          <Card className="surface-card answer-card analysis-card analysis-query-result" title="回答">
-            {result ? (
-              <Space direction="vertical" size="large" style={{ width: "100%" }}>
-                <div>
-                  <Typography.Text className="muted-text">
-                    图谱 {result.graph_id} · 模式 {result.mode}
-                  </Typography.Text>
-                  <Typography.Paragraph className="answer-text">
-                    {renderAnswer(result.answer)}
-                  </Typography.Paragraph>
-                </div>
-              </Space>
+          <Card
+            className="surface-card answer-card analysis-card analysis-query-result query-chat-card"
+            title="对话"
+          >
+            {conversations.length > 0 ? (
+              <div className="query-chat-thread" aria-live="polite">
+                {conversations.map((conversation) => {
+                  const selected = conversation.id === activeConversation?.id;
+
+                  return (
+                    <article
+                      role="button"
+                      tabIndex={0}
+                      className={`query-chat-exchange${selected ? " active" : ""}`}
+                      key={conversation.id}
+                      onClick={() => setActiveConversationId(conversation.id)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          setActiveConversationId(conversation.id);
+                        }
+                      }}
+                    >
+                      <div className="query-chat-meta">
+                        <span>{getGraphName(graphs, conversation.response.graph_id)}</span>
+                        <span>{conversation.response.mode}</span>
+                        <span>{conversation.createdAt}</span>
+                      </div>
+                      <div className="query-chat-message query-chat-message--user">
+                        <Typography.Paragraph>
+                          {conversation.request.question}
+                        </Typography.Paragraph>
+                      </div>
+                      <div className="query-chat-message query-chat-message--assistant">
+                        <Typography.Paragraph className="answer-text">
+                          {renderAnswer(conversation.response.answer)}
+                        </Typography.Paragraph>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
             ) : (
-              <Empty description="请先在左侧输入问题并发起查询" />
+              <Empty description="请先在左侧输入问题并发起查询。" />
             )}
           </Card>
 
-          <Card className="surface-card analysis-card analysis-query-context" title="上下文">
-            {result ? (
+          <Card
+            className="surface-card analysis-card analysis-query-context query-context-card"
+            title="检索上下文"
+            extra={
+              activeConversation ? (
+                <Tag color="blue">
+                  {getGraphName(graphs, activeConversation.response.graph_id)}
+                </Tag>
+              ) : null
+            }
+          >
+            {activeConversation && contextEntries.length > 0 ? (
               <Collapse
                 items={contextEntries.map(([key, value]) => ({
                   key,
@@ -131,8 +231,10 @@ export function QueryPage() {
                   children: renderContextValue(value),
                 }))}
               />
+            ) : activeConversation ? (
+              <Empty description="当前回答没有返回检索上下文。" />
             ) : (
-              <Empty description="查询完成后，这里会显示检索上下文" />
+              <Empty description="选择一条回答后，这里会显示检索上下文。" />
             )}
           </Card>
         </div>

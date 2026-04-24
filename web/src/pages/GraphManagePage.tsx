@@ -162,6 +162,10 @@ export function GraphManagePage() {
     navigate(`/graphs/${graph.id}`);
   }
 
+  function openGraphQuery(graphId: string) {
+    navigate(`/query?graph_id=${encodeURIComponent(graphId)}`);
+  }
+
   function buildFileStatusTagColor(status?: string | null) {
     switch (status) {
       case "succeeded":
@@ -629,7 +633,20 @@ export function GraphManagePage() {
           </Typography.Paragraph>
         </div>
         {isDetailView ? (
-          <Button onClick={() => navigate("/graphs")}>返回列表</Button>
+          <Space className="graph-pane-actions">
+            <Button
+              type="primary"
+              disabled={!selectedGraphId}
+              onClick={() => {
+                if (selectedGraphId) {
+                  openGraphQuery(selectedGraphId);
+                }
+              }}
+            >
+              去问答
+            </Button>
+            <Button onClick={() => navigate("/graphs")}>返回列表</Button>
+          </Space>
         ) : null}
       </div>
 
@@ -881,6 +898,7 @@ export function GraphManagePage() {
               selectedGraphId={selectedGraphId}
               onRefresh={() => void loadGraphs()}
               onSelect={openGraphManagement}
+              onQuery={(graph) => openGraphQuery(graph.id)}
               onDelete={(graph) => void handleDeleteGraph(graph)}
             />
           </Card>

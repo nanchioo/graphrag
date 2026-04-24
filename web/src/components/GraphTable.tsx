@@ -12,6 +12,7 @@ interface GraphTableProps {
   compact?: boolean;
   onRefresh: () => void;
   onSelect: (graph: GraphSummary) => void;
+  onQuery?: (graph: GraphSummary) => void;
   onDelete: (graph: GraphSummary) => void;
 }
 
@@ -22,6 +23,7 @@ export function GraphTable({
   compact = false,
   onRefresh,
   onSelect,
+  onQuery,
   onDelete,
 }: GraphTableProps) {
   void GRAPH_LIFECYCLE_STATUSES;
@@ -56,6 +58,11 @@ export function GraphTable({
                     <Button size="small" type="primary" onClick={() => onSelect(graph)}>
                       管理图谱
                     </Button>
+                    {onQuery ? (
+                      <Button size="small" onClick={() => onQuery(graph)}>
+                        去问答
+                      </Button>
+                    ) : null}
                     <Popconfirm
                       title="确认删除这个图谱项目?"
                       description="删除后将同时移除工作目录和构建产物。"
@@ -123,12 +130,17 @@ export function GraphTable({
         {
           title: "操作",
           key: "actions",
-          width: 190,
+          width: 260,
           render: (_, record) => (
             <Space size="small" onClick={(event) => event.stopPropagation()}>
               <Button size="small" type="primary" onClick={() => onSelect(record)}>
                 管理图谱
               </Button>
+              {onQuery ? (
+                <Button size="small" onClick={() => onQuery(record)}>
+                  去问答
+                </Button>
+              ) : null}
               <Popconfirm
                 title="确认删除这个图谱项目?"
                 description="删除后将同时移除工作目录和构建产物。"

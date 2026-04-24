@@ -3,26 +3,35 @@ import { useEffect } from "react";
 
 import { QUERY_MODE_OPTIONS } from "../content/workbench";
 import type { GraphSummary, QueryRequest } from "../types";
+import { resolveQueryGraphId } from "./queryPanelState";
 
 interface QueryPanelProps {
   graphs: GraphSummary[];
   loading?: boolean;
+  initialGraphId?: string | null;
   onSubmit: (payload: QueryRequest) => Promise<void> | void;
 }
 
-export function QueryPanel({ graphs, loading = false, onSubmit }: QueryPanelProps) {
+export function QueryPanel({
+  graphs,
+  loading = false,
+  initialGraphId = null,
+  onSubmit,
+}: QueryPanelProps) {
   const [form] = Form.useForm<QueryRequest>();
   const mode = Form.useWatch("mode", form);
 
   useEffect(() => {
-    if (graphs.length > 0 && !form.getFieldValue("graph_id")) {
-      form.setFieldsValue({
-        graph_id: graphs[0].id,
-        mode: "local",
-        response_type: "Multiple Paragraphs",
-      });
+    const nextGraphId = resolveQueryGraphId({
+      graphs,
+      requestedGraphId: initialGraphId,
+      currentGraphId: form.getFieldValue("graph_id"),
+    });
+
+    if (nextGraphId) {
+      form.setFieldsValue({ graph_id: nextGraphId });
     }
-  }, [form, graphs]);
+  }, [form, graphs, initialGraphId]);
 
   function getModeHelpText() {
     const selectedMode = QUERY_MODE_OPTIONS.find((option) => option.value === mode);
@@ -42,7 +51,7 @@ export function QueryPanel({ graphs, loading = false, onSubmit }: QueryPanelProp
   }
 
   return (
-    <Card className="surface-card analysis-card analysis-query-panel" title="发起问答">
+    <Card className="surface-card analysis-card analysis-query-panel" title="查询设置">
       <Form
         form={form}
         layout="vertical"
@@ -80,10 +89,10 @@ export function QueryPanel({ graphs, loading = false, onSubmit }: QueryPanelProp
             />
           </Form.Item>
           <Form.Item<QueryRequest> label="问题" name="question" rules={[{ required: true }]}>
-            <Input.TextArea rows={6} placeholder="例如：退款流程有哪些关键节点？" />
+            <Input.TextArea rows={5} placeholder="例如：退款流程有哪些关键节点？" />
           </Form.Item>
-          <Button type="primary" htmlType="submit" loading={loading}>
-            开始查询
+          <Button type="primary" htmlType="submit" loading={loading} block>
+            发送问题
           </Button>
         </Space>
       </Form>
