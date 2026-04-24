@@ -55,6 +55,10 @@ class GraphRagWrapperService:
 
     _INTERRUPTED_BUILD_MESSAGE = "Previous build was interrupted. Please retry."
     _INTERRUPTED_RESUME_MESSAGE = "Previous build was interrupted. Please resume."
+    _INCREMENTAL_REBUILD_REQUIRED_MESSAGE = (
+        "Detected modified or deleted source files since the last successful build. "
+        "Run full rebuild to keep the graph consistent."
+    )
     _EMBEDDING_DIMENSION_PROBE_TEXT = "This is an LLM Embedding Test String"
     _cwd_lock: ClassVar[asyncio.Lock] = asyncio.Lock()
     _tasks: ClassVar[dict[str, asyncio.Task[None]]] = {}
@@ -165,6 +169,11 @@ class GraphRagWrapperService:
                 status_code=status.HTTP_409_CONFLICT,
                 detail=f"Graph project '{graph_id}' is already building.",
             )
+        self._validate_start_build_inputs(
+            root_dir=root_dir,
+            action=action,
+            force_rebuild=force_rebuild,
+        )
 
         updated = graph_registry_service.mark_build_started(graph_id)
         task = asyncio.create_task(
@@ -309,11 +318,16 @@ class GraphRagWrapperService:
         root_dir = Path(graph.root_dir)
         source_files = await self.list_source_files(graph_id, graph_registry_service)
         artifact_paths = await self._existing_artifact_paths(root_dir)
+        has_pending_input_changes = self._has_pending_input_changes(root_dir)
         document_count, text_unit_count = self._read_output_counts(root_dir)
         last_error = self._diagnose_failure_message(root_dir, graph.last_error)
         progress_percent, progress_stage, progress_message = self._build_progress(
             root_dir=root_dir,
-            raw_status=graph.status,
+            raw_status=self._resolve_graph_status(
+                raw_status=graph.status,
+                has_artifacts=len(artifact_paths) > 0,
+                has_pending_input_changes=has_pending_input_changes,
+            ),
             has_source_files=len(source_files) > 0,
             document_count=document_count,
             text_unit_count=text_unit_count,
@@ -333,7 +347,11 @@ class GraphRagWrapperService:
 
         return GraphStatusPayload(
             graph_id=graph.id,
-            status=graph.status,
+            status=self._resolve_graph_status(
+                raw_status=graph.status,
+                has_artifacts=len(artifact_paths) > 0,
+                has_pending_input_changes=has_pending_input_changes,
+            ),
             last_build_at=graph.last_build_at,
             last_error=last_error,
             has_source_files=len(source_files) > 0,
@@ -499,6 +517,36 @@ class GraphRagWrapperService:
             graph_id,
             self._INTERRUPTED_BUILD_MESSAGE,
         )
+
+    def _validate_start_build_inputs(
+        self,
+        root_dir: Path,
+        action: str,
+        force_rebuild: bool,
+    ) -> None:
+        if action != "start" or force_rebuild:
+            return
+
+        diff = self._manifest_service.compare_inputs_to_manifest(root_dir)
+        if diff.changed or diff.deleted:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=self._INCREMENTAL_REBUILD_REQUIRED_MESSAGE,
+            )
+
+    def _has_pending_input_changes(self, root_dir: Path) -> bool:
+        diff = self._manifest_service.compare_inputs_to_manifest(root_dir)
+        return bool(diff.added or diff.changed or diff.deleted)
+
+    def _resolve_graph_status(
+        self,
+        raw_status: str,
+        has_artifacts: bool,
+        has_pending_input_changes: bool,
+    ) -> str:
+        if raw_status == "ready" and has_artifacts and has_pending_input_changes:
+            return "awaiting_build"
+        return raw_status
 
     def _get_active_task(self, graph_id: str) -> asyncio.Task[None] | None:
         task = self._tasks.get(graph_id)

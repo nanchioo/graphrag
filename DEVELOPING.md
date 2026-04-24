@@ -18,21 +18,21 @@ uv sync
 ## Run The Admin API
 
 ```shell
-uvicorn main:app --reload
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
 If `uvicorn` is not available on `PATH` in Windows PowerShell, run:
 
 ```powershell
 $env:PATH = "$PWD\.venv\Scripts;$env:PATH"
-uvicorn main:app --reload
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
 This starts the FastAPI wrapper layer added at the repository root. Useful URLs:
 
-- `http://127.0.0.1:8000/` - API metadata
-- `http://127.0.0.1:8000/docs` - OpenAPI docs
-- `http://127.0.0.1:8000/console/` - built React admin console when `web/dist` exists
+- `http://127.0.0.1:8000/` or `http://<your-lan-ip>:8000/` - API metadata
+- `http://127.0.0.1:8000/docs` or `http://<your-lan-ip>:8000/docs` - OpenAPI docs
+- `http://127.0.0.1:8000/console/` or `http://<your-lan-ip>:8000/console/` - built React admin console when `web/dist` exists
 
 ## Run The React Frontend
 

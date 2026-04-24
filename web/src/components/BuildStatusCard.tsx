@@ -74,7 +74,7 @@ export function BuildStatusCard({
             构建控制台
           </Typography.Title>
           <Typography.Paragraph className="muted-text" style={{ marginBottom: 0 }}>
-            这里可以控制开始构建、继续构建、全量重建和产物清理。
+            开始构建增量处理新增文件、继续构建恢复失败或中断的任务、全量重建重新计算整个图谱。
           </Typography.Paragraph>
         </div>
         <Space direction="vertical" align="end" size={8}>

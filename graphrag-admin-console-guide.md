@@ -41,21 +41,21 @@ graphrag/
 后端保持单命令启动：
 
 ```powershell
-uvicorn main:app --reload
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
 如果当前 PowerShell 无法直接识别 `uvicorn`，可先把项目虚拟环境加入本次会话的 `PATH`：
 
 ```powershell
 $env:PATH = "$PWD\.venv\Scripts;$env:PATH"
-uvicorn main:app --reload
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
 启动后访问：
 
-- API 根路径：`http://127.0.0.1:8000/`
-- Swagger 文档：`http://127.0.0.1:8000/docs`
-- 管理后台：`http://127.0.0.1:8000/console/`
+- API 根路径：`http://127.0.0.1:8000/` 或 `http://<你的局域网IP>:8000/`
+- Swagger 文档：`http://127.0.0.1:8000/docs` 或 `http://<你的局域网IP>:8000/docs`
+- 管理后台：`http://127.0.0.1:8000/console/` 或 `http://<你的局域网IP>:8000/console/`
 
 ### 3.2 前端开发模式
 
@@ -311,7 +311,7 @@ data/projects/customer-service-1234abcd/
 
 ### 7.6 后端交付
 
-- `uvicorn main:app --reload` 可直接启动
+- `uvicorn main:app --host 0.0.0.0 --port 8000 --reload` 可直接启动
 - `/docs` 可正常打开
 - `/api/health` 返回成功
 - 图谱构建失败时能看到错误信息
