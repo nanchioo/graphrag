@@ -2,7 +2,6 @@ import {
   Alert,
   Button,
   Card,
-  Descriptions,
   Empty,
   Progress,
   Select,
@@ -19,6 +18,7 @@ interface BuildStatusCardProps {
   actionError?: string | null;
   busy?: boolean;
   buildMethod: GraphBuildMethod;
+  sourceFileCount?: number;
   onBuildMethodChange: (method: GraphBuildMethod) => void;
   onStartBuild: () => Promise<void> | void;
   onResumeBuild: () => Promise<void> | void;
@@ -32,6 +32,7 @@ export function BuildStatusCard({
   actionError = null,
   busy = false,
   buildMethod,
+  sourceFileCount = 0,
   onBuildMethodChange,
   onStartBuild,
   onResumeBuild,
@@ -48,7 +49,10 @@ export function BuildStatusCard({
   }
 
   const statusMeta = getGraphStatusMeta(status.status);
-  const canResume = status.resumable && !busy;
+  const hasSourceFiles =
+    sourceFileCount > 0 || status.source_file_count > 0 || status.has_source_files;
+  const canStartBuild = hasSourceFiles && !busy;
+  const canResume = status.resumable && hasSourceFiles && !busy;
   const progressStatus =
     status.status === "failed"
       ? "exception"
@@ -77,33 +81,42 @@ export function BuildStatusCard({
             开始构建增量处理新增文件、继续构建恢复失败或中断的任务、全量重建重新计算整个图谱。
           </Typography.Paragraph>
         </div>
-        <Space direction="vertical" align="end" size={8}>
+        <div className="build-status-actions">
           <Select
             value={buildMethod}
-            style={{ minWidth: 140 }}
+            className="build-method-select"
             onChange={onBuildMethodChange}
           >
             <Select.Option value="standard">标准构建</Select.Option>
             <Select.Option value="fast">快速构建</Select.Option>
           </Select>
-          <Space wrap className="status-actions">
+          <Space wrap className="status-actions" size={8}>
             <Button onClick={() => void onRefresh()} loading={busy}>
               刷新
             </Button>
-            <Button type="primary" onClick={() => void onStartBuild()} loading={busy}>
+            <Button
+              type="primary"
+              onClick={() => void onStartBuild()}
+              loading={busy}
+              disabled={!canStartBuild}
+            >
               开始构建
             </Button>
             <Button onClick={() => void onResumeBuild()} loading={busy} disabled={!canResume}>
               继续构建
             </Button>
-            <Button onClick={() => void onFullRebuild()} loading={busy}>
+            <Button
+              onClick={() => void onFullRebuild()}
+              loading={busy}
+              disabled={!canStartBuild}
+            >
               全量重建
             </Button>
             <Button danger onClick={() => void onClearArtifacts()} loading={busy}>
               清理
             </Button>
           </Space>
-        </Space>
+        </div>
       </div>
 
       {actionError ? (
@@ -116,41 +129,74 @@ export function BuildStatusCard({
         />
       ) : null}
 
-      <Descriptions column={2} size="small" bordered>
-        <Descriptions.Item label="当前状态">
-          <Tag color={statusMeta.color}>{statusMeta.label}</Tag>
-        </Descriptions.Item>
-        <Descriptions.Item label="当前阶段">{getGraphStageLabel(status.progress_stage)}</Descriptions.Item>
-        <Descriptions.Item label="构建进度" span={2}>
+      {!hasSourceFiles ? (
+        <Alert
+          style={{ marginBottom: 16 }}
+          type="warning"
+          showIcon
+          message="请先上传源文件"
+          description="当前图谱还没有可构建的源文件，上传成功后再开始构建。"
+        />
+      ) : null}
+
+      <div className="build-status-body">
+        <div className="build-status-progress">
+          <div className="build-status-progress-head">
+            <div>
+              <span>构建进度</span>
+              <strong>{status.progress_percent}%</strong>
+            </div>
+            <Tag color={statusMeta.color}>{statusMeta.label}</Tag>
+          </div>
           <Progress
             percent={status.progress_percent}
             status={progressStatus}
             strokeColor={progressStrokeColor}
+            showInfo={false}
           />
-        </Descriptions.Item>
-        <Descriptions.Item label="已完成文件">{status.completed_file_count}</Descriptions.Item>
-        <Descriptions.Item label="失败 / 待处理">
-          {status.failed_file_count} / {status.pending_file_count}
-        </Descriptions.Item>
-        <Descriptions.Item label="切片数量">{status.text_unit_count}</Descriptions.Item>
-        <Descriptions.Item label="文档数量">{status.document_count}</Descriptions.Item>
-        <Descriptions.Item label="最近构建错误" span={2}>
-          {status.last_error || "暂无最近构建错误。"}
-        </Descriptions.Item>
-      </Descriptions>
+        </div>
 
-      <Space direction="vertical" size={8} style={{ width: "100%", marginTop: 16 }}>
-        <Typography.Text className="muted-text">
-          当前阶段消息：{status.progress_message}
-        </Typography.Text>
-        {status.current_file ? (
-          <Typography.Text className="muted-text">当前文件：{status.current_file}</Typography.Text>
-        ) : null}
-        <Typography.Text className="muted-text">
-          后续阶段：embedding_generation → reports_generation
-        </Typography.Text>
-        {status.resumable ? <Tag color="blue">可继续</Tag> : <Tag>暂不可继续</Tag>}
-      </Space>
+        <div className="build-status-metrics">
+          <div className="build-status-metric">
+            <span>当前阶段</span>
+            <strong>{getGraphStageLabel(status.progress_stage)}</strong>
+          </div>
+          <div className="build-status-metric">
+            <span>已完成文件</span>
+            <strong>{status.completed_file_count}</strong>
+          </div>
+          <div className="build-status-metric">
+            <span>失败 / 待处理</span>
+            <strong>
+              {status.failed_file_count} / {status.pending_file_count}
+            </strong>
+          </div>
+          <div className="build-status-metric">
+            <span>文档 / 切片</span>
+            <strong>
+              {status.document_count} / {status.text_unit_count}
+            </strong>
+          </div>
+        </div>
+
+        <div className="build-status-message">
+          <Typography.Text className="muted-text">
+            当前阶段消息：{status.progress_message}
+          </Typography.Text>
+          {status.current_file ? (
+            <Typography.Text className="muted-text">
+              当前文件：{status.current_file}
+            </Typography.Text>
+          ) : null}
+          <Typography.Text className="muted-text">
+            后续阶段：embedding_generation → reports_generation
+          </Typography.Text>
+          <div>{status.resumable ? <Tag color="blue">可继续</Tag> : <Tag>暂不可继续</Tag>}</div>
+          {status.last_error ? (
+            <Typography.Text type="danger">最近构建错误：{status.last_error}</Typography.Text>
+          ) : null}
+        </div>
+      </div>
     </Card>
   );
 }

@@ -7,12 +7,23 @@ import { uploadGraphFiles } from "../api/client";
 interface UploadPanelProps {
   graphId?: string;
   loading?: boolean;
+  existingFileNames?: string[];
   onUploaded: () => Promise<void> | void;
 }
 
-export function UploadPanel({ graphId, loading = false, onUploaded }: UploadPanelProps) {
+function normalizeFileName(name: string) {
+  return name.trim().toLocaleLowerCase();
+}
+
+export function UploadPanel({
+  graphId,
+  loading = false,
+  existingFileNames = [],
+  onUploaded,
+}: UploadPanelProps) {
   const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [uploading, setUploading] = useState(false);
+  const existingFileNameSet = new Set(existingFileNames.map(normalizeFileName));
 
   async function handleUpload() {
     if (!graphId || fileList.length === 0) {
@@ -26,6 +37,20 @@ export function UploadPanel({ graphId, loading = false, onUploaded }: UploadPane
     if (files.length === 0) {
       message.warning("请先选择至少一个文件。");
       return;
+    }
+
+    const pendingFileNameSet = new Set<string>();
+    for (const file of files) {
+      const normalizedName = normalizeFileName(file.name);
+      if (existingFileNameSet.has(normalizedName)) {
+        message.warning(`${file.name} 该文件已存在，请先删除后再重新上传。`);
+        return;
+      }
+      if (pendingFileNameSet.has(normalizedName)) {
+        message.warning(`${file.name} 待上传列表中已存在同名文件。`);
+        return;
+      }
+      pendingFileNameSet.add(normalizedName);
     }
 
     try {
@@ -49,17 +74,35 @@ export function UploadPanel({ graphId, loading = false, onUploaded }: UploadPane
           fileList={fileList}
           disabled={!graphId || loading || uploading}
           beforeUpload={(file) => {
-            setFileList((current) => [
-              ...current.filter((item) => item.uid !== file.uid),
-              {
-                uid: file.uid,
-                name: file.name,
-                size: file.size,
-                type: file.type,
-                status: "done",
-                originFileObj: file,
-              },
-            ]);
+            const normalizedName = normalizeFileName(file.name);
+            if (existingFileNameSet.has(normalizedName)) {
+              message.warning(`${file.name} 该文件已存在，请先删除后再重新上传。`);
+              return Upload.LIST_IGNORE;
+            }
+
+            setFileList((current) => {
+              if (
+                current.some(
+                  (item) =>
+                    item.uid !== file.uid && normalizeFileName(item.name) === normalizedName,
+                )
+              ) {
+                message.warning(`${file.name} 待上传列表中已存在同名文件。`);
+                return current;
+              }
+
+              return [
+                ...current.filter((item) => item.uid !== file.uid),
+                {
+                  uid: file.uid,
+                  name: file.name,
+                  size: file.size,
+                  type: file.type,
+                  status: "done",
+                  originFileObj: file,
+                },
+              ];
+            });
             return Upload.LIST_IGNORE;
           }}
           onRemove={(file) => {

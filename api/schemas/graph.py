@@ -134,6 +134,14 @@ class SourceFileListPayload(BaseModel):
     total: int = 0
 
 
+class DeleteSourceFilePayload(BaseModel):
+    """Source file deletion response payload."""
+
+    graph_id: str
+    relative_path: str
+    status: str
+
+
 GraphBuildMethod = Literal["standard", "fast"]
 GraphBuildAction = Literal["start", "resume"]
 

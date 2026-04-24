@@ -22,6 +22,7 @@ from api.schemas.common import ApiResponse
 from api.schemas.graph import (
     DeleteArtifactsPayload,
     DeleteGraphPayload,
+    DeleteSourceFilePayload,
     DeleteTextUnitPayload,
     GraphBuildPayload,
     GraphBuildRequest,
@@ -266,6 +267,32 @@ async def list_graph_files(
     return ApiResponse(
         message="Source files loaded.",
         data=SourceFileListPayload(items=items, total=len(items)),
+    )
+
+
+@router.delete(
+    "/{graph_id}/files/{relative_path:path}",
+    response_model=ApiResponse[DeleteSourceFilePayload],
+)
+async def delete_graph_source_file(
+    graph_id: str,
+    relative_path: str,
+    graph_registry_service: GraphRegistryService = Depends(get_graph_registry_service),
+    source_ingest_service: SourceIngestService = Depends(get_source_ingest_service),
+) -> ApiResponse[DeleteSourceFilePayload]:
+    """Delete a source file from the graph project's input directory."""
+    graph = graph_registry_service.get_graph(graph_id)
+    deleted_file = await source_ingest_service.delete_file(
+        Path(graph.root_dir) / "input",
+        relative_path,
+    )
+    return ApiResponse(
+        message="Source file deleted.",
+        data=DeleteSourceFilePayload(
+            graph_id=graph.id,
+            relative_path=deleted_file.relative_path,
+            status="deleted",
+        ),
     )
 
 

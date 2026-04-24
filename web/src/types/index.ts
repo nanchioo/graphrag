@@ -68,6 +68,12 @@ export interface SourceFileListPayload {
   total: number;
 }
 
+export interface DeleteSourceFilePayload {
+  graph_id: string;
+  relative_path: string;
+  status: string;
+}
+
 export interface GraphBuildRequest {
   action: GraphBuildAction;
   method: GraphBuildMethod;

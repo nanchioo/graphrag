@@ -225,6 +225,39 @@ def test_upload_panel_preserves_origin_file_objects_for_manual_submit():
     assert "Upload.LIST_IGNORE" in upload_panel_source
 
 
+def test_upload_panel_rejects_duplicate_source_file_names_before_submit():
+    upload_panel_source = Path("web/src/components/UploadPanel.tsx").read_text(
+        encoding="utf-8"
+    )
+    page_source = Path("web/src/pages/GraphManagePage.tsx").read_text(
+        encoding="utf-8"
+    )
+
+    assert "existingFileNames?: string[]" in upload_panel_source
+    assert "existingFileNames = []" in upload_panel_source
+    assert "normalizeFileName" in upload_panel_source
+    assert "existingFileNameSet" in upload_panel_source
+    assert "该文件已存在，请先删除后再重新上传。" in upload_panel_source
+    assert "待上传列表中已存在同名文件。" in upload_panel_source
+    assert "existingFileNames={graphFiles?.items.map((item) => item.name) ?? []}" in page_source
+
+
+def test_graph_manage_page_exposes_source_file_delete_action():
+    api_client_source = Path("web/src/api/client.ts").read_text(encoding="utf-8")
+    page_source = Path("web/src/pages/GraphManagePage.tsx").read_text(
+        encoding="utf-8"
+    )
+    types_source = Path("web/src/types/index.ts").read_text(encoding="utf-8")
+
+    assert "DeleteSourceFilePayload" in types_source
+    assert "deleteGraphSourceFile" in api_client_source
+    assert "encodeURIComponent(relativePath)" in api_client_source
+    assert "deleteGraphSourceFile" in page_source
+    assert "handleDeleteSourceFile" in page_source
+    assert "确认删除这个源文件?" in page_source
+    assert "删除后需要重新构建图谱。" in page_source
+
+
 def test_graph_manage_page_optimistically_marks_building_before_refresh():
     page_source = Path("web/src/pages/GraphManagePage.tsx").read_text(encoding="utf-8")
     styles_source = Path("web/src/styles.css").read_text(encoding="utf-8")
@@ -462,7 +495,8 @@ def test_graph_operation_components_use_analysis_console_surface_classes():
     assert "progressStatus" in build_source
     assert "progressStrokeColor" in build_source
     assert 'className="surface-card analysis-card analysis-graph-preview"' in preview_source
-    assert 'color: node.type === "person" ? "#3b82f6" : "#1e40af"' in preview_source
+    assert "KNOWLEDGE_GRAPH_NODE_STYLES" in preview_source
+    assert "getKnowledgeGraphNodeStyle" in preview_source
     assert 'className="surface-card analysis-card analysis-sidebar-table"' in table_source
     assert 'className="surface-card analysis-card analysis-upload-panel"' in upload_source
     assert 'className="surface-card analysis-card analysis-text-unit-list"' in text_unit_source
@@ -673,6 +707,90 @@ def test_graph_manage_page_renders_file_level_build_tags():
     assert "attempt_count" in page_source
     assert "last_build_error" in page_source
     assert "text_unit_count" in page_source
+
+
+def test_build_workbench_asset_cards_use_equal_height_layout():
+    styles_source = Path("web/src/styles.css").read_text(encoding="utf-8")
+
+    assets_start = styles_source.index(".build-workbench-assets {")
+    assets_end = styles_source.index(".source-file-card .ant-card-body", assets_start)
+    assets_block = styles_source[assets_start:assets_end]
+
+    assert "align-items: stretch;" in assets_block
+    assert ".build-workbench-assets > .analysis-card {" in styles_source
+
+    card_rule_start = styles_source.index(".build-workbench-assets > .analysis-card {")
+    card_rule_end = styles_source.index("}", card_rule_start)
+    card_rule = styles_source[card_rule_start:card_rule_end]
+
+    assert "min-width: 0;" in card_rule
+    assert "height: 100%;" in card_rule
+
+
+def test_graph_preview_exposes_zoom_controls_and_limits():
+    preview_source = Path("web/src/components/GraphPreview.tsx").read_text(
+        encoding="utf-8"
+    )
+    styles_source = Path("web/src/styles.css").read_text(encoding="utf-8")
+
+    assert "graph-preview-toolbar" in preview_source
+    assert "放大" in preview_source
+    assert "缩小" in preview_source
+    assert "重置视图" in preview_source
+    assert 'type: "graphRoam"' in preview_source
+    assert "scaleLimit" in preview_source
+    assert "GRAPH_MAX_ZOOM" in preview_source
+    assert "GRAPH_MIN_ZOOM" in preview_source
+    assert "graph-preview-zoom" in preview_source
+    assert ".graph-preview-toolbar {" in styles_source
+    assert "touch-action: none;" in styles_source
+
+
+def test_graph_preview_exposes_fullscreen_controls():
+    preview_source = Path("web/src/components/GraphPreview.tsx").read_text(
+        encoding="utf-8"
+    )
+    styles_source = Path("web/src/styles.css").read_text(encoding="utf-8")
+
+    assert "graphFullscreenRef" in preview_source
+    assert "toggleGraphFullscreen" in preview_source
+    assert "requestFullscreen" in preview_source
+    assert "exitFullscreen" in preview_source
+    assert "fullscreenchange" in preview_source
+    assert "全屏" in preview_source
+    assert "退出全屏" in preview_source
+    assert "graph-preview-interactive" in preview_source
+    assert "graph-preview-interactive--fullscreen" in preview_source
+    assert "resizeGraphAfterFullscreenChange" in preview_source
+    assert "resizeGraphSoon(260)" in preview_source
+    assert ".graph-preview-interactive:fullscreen" in styles_source
+    assert ".graph-preview-interactive--fullscreen .graph-preview-chart" in styles_source
+    assert "height: calc(100vh - 138px);" in styles_source
+
+
+def test_graph_preview_uses_knowledge_graph_visual_encoding():
+    preview_source = Path("web/src/components/GraphPreview.tsx").read_text(
+        encoding="utf-8"
+    )
+
+    assert "KNOWLEDGE_GRAPH_PALETTE" in preview_source
+    assert "KNOWLEDGE_GRAPH_NODE_STYLES" in preview_source
+    assert "getKnowledgeGraphNodeStyle" in preview_source
+    assert "getKnowledgeGraphNodeSize" in preview_source
+    assert "getKnowledgeGraphNodeCategory" in preview_source
+    assert "#5b7cfa" in preview_source
+    assert "#1aa987" in preview_source
+    assert "#e07a5f" in preview_source
+    assert "legend:" in preview_source
+    assert "categories: getKnowledgeGraphCategories(preview.nodes)" in preview_source
+    assert "nodeScaleRatio" in preview_source
+    assert "symbol: getKnowledgeGraphNodeSymbol(node.type)" in preview_source
+    assert "borderColor: \"#ffffff\"" in preview_source
+    assert "shadowBlur" in preview_source
+    assert "edgeSymbol" in preview_source
+    assert "formatter: formatKnowledgeGraphTooltip" in preview_source
+    assert "#be123c" not in preview_source
+    assert 'color: node.type === "person" ? "#3b82f6" : "#1e40af"' not in preview_source
 
 
 def test_model_config_page_exposes_connect_action_for_saved_profiles():

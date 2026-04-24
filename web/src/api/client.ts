@@ -2,6 +2,7 @@ import type {
   ApiResponse,
   DeleteArtifactsPayload,
   DeleteGraphPayload,
+  DeleteSourceFilePayload,
   ModelProfileConnectionPayload,
   DeleteModelProfilePayload,
   DeleteTextUnitPayload,
@@ -92,6 +93,18 @@ export async function uploadGraphFiles(
     method: "POST",
     body: formData,
   });
+}
+
+export async function deleteGraphSourceFile(
+  graphId: string,
+  relativePath: string,
+): Promise<DeleteSourceFilePayload> {
+  return requestJson<DeleteSourceFilePayload>(
+    `/api/graph/${graphId}/files/${encodeURIComponent(relativePath)}`,
+    {
+      method: "DELETE",
+    },
+  );
 }
 
 export async function buildGraph(

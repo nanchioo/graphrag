@@ -5,12 +5,13 @@ import {
   Form,
   Input,
   InputNumber,
-  List,
   Modal,
+  Popconfirm,
   Select,
   Space,
   Spin,
   Tabs,
+  Table,
   Tag,
   Typography,
   message,
@@ -23,6 +24,7 @@ import {
   clearGraphArtifacts,
   createGraph,
   deleteGraph,
+  deleteGraphSourceFile,
   deleteGraphTextUnit,
   getGraph,
   getGraphFiles,
@@ -54,6 +56,7 @@ import type {
   GraphTextUnitListPayload,
   ModelProfileResponse,
   SourceFileListPayload,
+  SourceFileItem,
 } from "../types";
 
 type HydrateGraphOptions = {
@@ -85,6 +88,18 @@ function getSourceFileBuildStatusLabel(status?: string | null) {
     default:
       return status ?? "-";
   }
+}
+
+function formatFileSize(sizeBytes: number) {
+  if (sizeBytes < 1024) {
+    return `${sizeBytes} B`;
+  }
+
+  if (sizeBytes < 1024 * 1024) {
+    return `${(sizeBytes / 1024).toFixed(1)} KB`;
+  }
+
+  return `${(sizeBytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
 export function GraphManagePage() {
@@ -355,6 +370,11 @@ export function GraphManagePage() {
       return;
     }
 
+    if (!hasSourceFiles) {
+      messageApi.warning("请先上传源文件，再开始构建。");
+      return;
+    }
+
     try {
       setActionLoading(true);
       setBuildAttemptError(null);
@@ -493,6 +513,24 @@ export function GraphManagePage() {
     }
   }
 
+  async function handleDeleteSourceFile(sourceFile: SourceFileItem) {
+    if (!selectedGraphId) {
+      return;
+    }
+
+    try {
+      setActionLoading(true);
+      setBuildAttemptError(null);
+      await deleteGraphSourceFile(selectedGraphId, sourceFile.relative_path);
+      messageApi.success("源文件已删除。");
+      await hydrateGraph(selectedGraphId);
+    } catch (error) {
+      messageApi.error(error instanceof Error ? error.message : "源文件删除失败。");
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
   async function handleDeleteGraph(graph: GraphSummary) {
     try {
       setActionLoading(true);
@@ -560,6 +598,8 @@ export function GraphManagePage() {
   }, [graphStatus?.status, selectedGraphId]);
 
   const selectedStatusMeta = graphStatus ? getGraphStatusMeta(graphStatus.status) : null;
+  const sourceFileCount = graphFiles?.total ?? graphStatus?.source_file_count ?? 0;
+  const hasSourceFiles = sourceFileCount > 0 || graphStatus?.has_source_files === true;
   const waitingGraphCount = graphs.filter((graph) =>
     ["awaiting_upload", "awaiting_build", "artifacts_deleted", "initialized"].includes(
       graph.status,
@@ -598,38 +638,40 @@ export function GraphManagePage() {
           {graphDetail ? (
             <div className="graph-workspace graph-workspace--detail">
               <Card
-                className="surface-card analysis-card analysis-card--spotlight graph-summary-card"
-                title={graphDetail.name}
-                extra={
-                  selectedStatusMeta ? (
-                    <Tag color={selectedStatusMeta.color}>{selectedStatusMeta.label}</Tag>
-                  ) : null
-                }
+                className="surface-card analysis-card analysis-card--spotlight graph-detail-summary"
               >
-                <div className="graph-summary-grid">
-                  <div className="graph-summary-item">
-                    <span>图谱ID</span>
-                    <strong>{graphDetail.id}</strong>
+                <div className="graph-detail-summary-head">
+                  <div>
+                    <Typography.Title level={4}>{graphDetail.name}</Typography.Title>
+                    <Typography.Text className="muted-text">{graphDetail.id}</Typography.Text>
+                    <Typography.Text className="graph-detail-path">
+                      保存位置：{graphDetail.root_dir}
+                    </Typography.Text>
                   </div>
+                  {selectedStatusMeta ? (
+                    <Tag color={selectedStatusMeta.color}>{selectedStatusMeta.label}</Tag>
+                  ) : null}
+                </div>
+                <div className="graph-summary-grid">
                   <div className="graph-summary-item">
                     <span>模型配置</span>
                     <strong>{graphDetail.model_profile_id || "未绑定"}</strong>
                   </div>
                   <div className="graph-summary-item">
                     <span>源文件</span>
-                    <strong>{graphFiles?.total ?? 0}</strong>
+                    <strong>{sourceFileCount}</strong>
                   </div>
                   <div className="graph-summary-item">
                     <span>文本切片</span>
                     <strong>{graphStatus?.text_unit_count ?? graphTextUnits?.total ?? 0}</strong>
                   </div>
-                  <div className="graph-summary-item graph-summary-item--wide">
-                    <span>保存位置</span>
-                    <strong>{graphDetail.root_dir}</strong>
-                  </div>
                   <div className="graph-summary-item">
                     <span>最近构建</span>
                     <strong>{graphDetail.last_build_at || "暂无"}</strong>
+                  </div>
+                  <div className="graph-summary-item">
+                    <span>创建时间</span>
+                    <strong>{graphDetail.created_at}</strong>
                   </div>
                 </div>
               </Card>
@@ -642,57 +684,114 @@ export function GraphManagePage() {
                     key: "workbench",
                     label: "构建工作台",
                     children: (
-                      <div className="build-workbench-grid">
-                        <div className="build-workbench-primary">
+                      <div className="build-workbench-shell">
+                        <div className="build-workbench-assets">
                           <UploadPanel
                             graphId={selectedGraphId}
                             loading={detailLoading}
+                            existingFileNames={graphFiles?.items.map((item) => item.name) ?? []}
                             onUploaded={async () => {
                               if (selectedGraphId) {
                                 await hydrateGraph(selectedGraphId);
                               }
                             }}
                           />
-                          <Card className="analysis-card" title="源文件列表">
+                          <Card
+                            className="analysis-card source-file-card"
+                            title="源文件列表"
+                            extra={
+                              <Typography.Text className="source-file-count">
+                                {graphFiles?.total ?? 0} 个文件
+                              </Typography.Text>
+                            }
+                          >
                             {graphFiles && graphFiles.items.length > 0 ? (
-                              <List
+                              <Table<SourceFileItem>
+                                className="source-file-table"
                                 size="small"
+                                rowKey={(item) => item.relative_path || item.name}
                                 dataSource={graphFiles.items}
-                                renderItem={(item) => (
-                                  <List.Item>
-                                    <Space direction="vertical" size={2} style={{ width: "100%" }}>
-                                      <Space wrap>
-                                        <Typography.Text strong>{item.name}</Typography.Text>
-                                        {item.build_status ? (
-                                          <Tag color={buildFileStatusTagColor(item.build_status)}>
-                                            {getSourceFileBuildStatusLabel(item.build_status)}
-                                          </Tag>
+                                pagination={false}
+                                scroll={{ y: 260, x: 760 }}
+                                columns={[
+                                  {
+                                    title: "文件",
+                                    dataIndex: "name",
+                                    key: "name",
+                                    ellipsis: true,
+                                    render: (_, item) => (
+                                      <Space direction="vertical" size={2} className="source-file-name">
+                                        <Typography.Text strong ellipsis={{ tooltip: item.name }}>
+                                          {item.name}
+                                        </Typography.Text>
+                                        {item.last_build_error ? (
+                                          <Typography.Text type="danger" ellipsis={{ tooltip: item.last_build_error }}>
+                                            {item.last_build_error}
+                                          </Typography.Text>
                                         ) : null}
+                                      </Space>
+                                    ),
+                                  },
+                                  {
+                                    title: "状态",
+                                    key: "status",
+                                    width: 120,
+                                    render: (_, item) => (
+                                      <Space size={4} wrap>
+                                        <Tag color={buildFileStatusTagColor(item.build_status)}>
+                                          {getSourceFileBuildStatusLabel(item.build_status)}
+                                        </Tag>
                                         {item.is_current ? <Tag color="processing">当前</Tag> : null}
                                       </Space>
-                                      <Typography.Text className="muted-text">
-                                        {item.extension} · {item.size_bytes} 字节
-                                      </Typography.Text>
-                                      <Typography.Text className="muted-text">
-                                        尝试次数 {item.attempt_count ?? 0}
-                                      </Typography.Text>
-                                      {item.last_built_at ? (
-                                        <Typography.Text className="muted-text">
-                                          上次构建 {item.last_built_at}
-                                        </Typography.Text>
-                                      ) : null}
-                                      {item.last_build_error ? (
-                                        <Typography.Text type="danger">
-                                          {item.last_build_error}
-                                        </Typography.Text>
-                                      ) : null}
-                                      <Typography.Text className="muted-text">
-                                        文档数 {item.document_count ?? 0} | 切片数{" "}
-                                        {item.text_unit_count ?? 0}
-                                      </Typography.Text>
-                                    </Space>
-                                  </List.Item>
-                                )}
+                                    ),
+                                  },
+                                  {
+                                    title: "大小",
+                                    dataIndex: "size_bytes",
+                                    key: "size",
+                                    width: 100,
+                                    render: (sizeBytes: number) => formatFileSize(sizeBytes),
+                                  },
+                                  {
+                                    title: "文档/切片",
+                                    key: "units",
+                                    width: 110,
+                                    render: (_, item) =>
+                                      `${item.document_count ?? 0} / ${item.text_unit_count ?? 0}`,
+                                  },
+                                  {
+                                    title: "尝试",
+                                    dataIndex: "attempt_count",
+                                    key: "attempts",
+                                    width: 76,
+                                    render: (attemptCount?: number | null) => attemptCount ?? 0,
+                                  },
+                                  {
+                                    title: "操作",
+                                    key: "actions",
+                                    width: 92,
+                                    fixed: "right",
+                                    render: (_, item) => (
+                                      <Popconfirm
+                                        title="确认删除这个源文件?"
+                                        description="删除后需要重新构建图谱。"
+                                        okText="删除"
+                                        cancelText="取消"
+                                        okButtonProps={{ danger: true }}
+                                        onConfirm={() => void handleDeleteSourceFile(item)}
+                                      >
+                                        <Button
+                                          danger
+                                          size="small"
+                                          loading={actionLoading}
+                                          disabled={graphStatus?.status === "building"}
+                                        >
+                                          删除
+                                        </Button>
+                                      </Popconfirm>
+                                    ),
+                                  },
+                                ]}
                               />
                             ) : (
                               <Empty description="暂无已上传的源文件。" />
@@ -704,6 +803,7 @@ export function GraphManagePage() {
                           actionError={buildAttemptError}
                           busy={actionLoading}
                           buildMethod={buildMethod}
+                          sourceFileCount={sourceFileCount}
                           onBuildMethodChange={setBuildMethod}
                           onStartBuild={async () => handleBuildAction("start", false)}
                           onResumeBuild={async () => handleBuildAction("resume", false)}

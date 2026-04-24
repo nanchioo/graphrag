@@ -146,6 +146,79 @@ def test_upload_graph_files_persists_files_and_lists_sources(
     ]
 
 
+def test_upload_graph_files_rejects_duplicate_source_names(
+    graph_file_client: tuple[
+        TestClient, Path, AppConfigService, GraphRegistryService
+    ],
+):
+    client, projects_root, _, _ = graph_file_client
+
+    create_response = client.post(
+        "/api/graph",
+        json={"name": "Duplicate Graph"},
+    )
+    assert create_response.status_code == 201
+    graph_id = create_response.json()["data"]["id"]
+    input_dir = projects_root / graph_id / "input"
+
+    first_upload = client.post(
+        f"/api/graph/{graph_id}/files",
+        files=[("files", ("notes.txt", b"hello graph", "text/plain"))],
+    )
+    assert first_upload.status_code == 201
+
+    duplicate_upload = client.post(
+        f"/api/graph/{graph_id}/files",
+        files=[("files", ("notes.txt", b"duplicate", "text/plain"))],
+    )
+
+    assert duplicate_upload.status_code == 409
+    assert "already exists" in duplicate_upload.json()["message"]
+    assert (input_dir / "notes.txt").read_bytes() == b"hello graph"
+    assert not (input_dir / "notes-1.txt").exists()
+
+
+def test_delete_graph_source_file_removes_uploaded_file(
+    graph_file_client: tuple[
+        TestClient, Path, AppConfigService, GraphRegistryService
+    ],
+):
+    client, projects_root, _, _ = graph_file_client
+
+    create_response = client.post(
+        "/api/graph",
+        json={"name": "Delete Source Graph"},
+    )
+    assert create_response.status_code == 201
+    graph_id = create_response.json()["data"]["id"]
+    input_dir = projects_root / graph_id / "input"
+
+    upload_response = client.post(
+        f"/api/graph/{graph_id}/files",
+        files=[("files", ("notes.txt", b"hello graph", "text/plain"))],
+    )
+    assert upload_response.status_code == 201
+    assert (input_dir / "notes.txt").exists()
+
+    delete_response = client.delete(f"/api/graph/{graph_id}/files/notes.txt")
+
+    assert delete_response.status_code == 200
+    assert delete_response.json() == {
+        "success": True,
+        "message": "Source file deleted.",
+        "data": {
+            "graph_id": graph_id,
+            "relative_path": "notes.txt",
+            "status": "deleted",
+        },
+    }
+    assert not (input_dir / "notes.txt").exists()
+
+    list_response = client.get(f"/api/graph/{graph_id}/files")
+    assert list_response.status_code == 200
+    assert list_response.json()["data"] == {"items": [], "total": 0}
+
+
 @pytest.mark.asyncio
 async def test_source_ingest_service_loads_mixed_supported_documents(tmp_path: Path):
     input_dir = tmp_path / "input"
