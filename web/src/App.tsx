@@ -104,6 +104,7 @@ function AppShell() {
           <Routes>
             <Route path="/" element={<Navigate to="/graphs" replace />} />
             <Route path="/graphs" element={<GraphManagePage />} />
+            <Route path="/graphs/:graphId" element={<GraphManagePage />} />
             <Route path="/models" element={<ModelConfigPage />} />
             <Route path="/query" element={<QueryPage />} />
           </Routes>

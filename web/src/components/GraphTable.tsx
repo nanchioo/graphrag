@@ -49,10 +49,13 @@ export function GraphTable({
                   >
                     <span className="graph-project-name">{graph.name}</span>
                     <span className="graph-project-id">{graph.id}</span>
-                    <span className="graph-project-description">点击进入右侧工作台</span>
+                    <span className="graph-project-description">点击进入图谱管理工作台</span>
                   </button>
                   <div className="graph-project-meta">
                     <Tag color={meta.color}>{meta.label}</Tag>
+                    <Button size="small" type="primary" onClick={() => onSelect(graph)}>
+                      管理图谱
+                    </Button>
                     <Popconfirm
                       title="确认删除这个图谱项目?"
                       description="删除后将同时移除工作目录和构建产物。"
@@ -120,9 +123,12 @@ export function GraphTable({
         {
           title: "操作",
           key: "actions",
-          width: 120,
+          width: 190,
           render: (_, record) => (
             <Space size="small" onClick={(event) => event.stopPropagation()}>
+              <Button size="small" type="primary" onClick={() => onSelect(record)}>
+                管理图谱
+              </Button>
               <Popconfirm
                 title="确认删除这个图谱项目?"
                 description="删除后将同时移除工作目录和构建产物。"

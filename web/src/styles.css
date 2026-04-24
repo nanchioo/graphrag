@@ -323,8 +323,6 @@ select {
 
 .app-content {
   width: 100%;
-  max-width: 1500px;
-  margin: 0 auto;
   padding: 28px 34px 56px;
 }
 
@@ -353,6 +351,52 @@ select {
   gap: 20px;
   align-items: start;
   min-width: 0;
+}
+
+.graph-overview {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.graph-overview-stats {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.graph-overview-stat {
+  min-width: 0;
+  padding: 14px 16px;
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-xs);
+}
+
+.graph-overview-stat span,
+.graph-overview-stat strong {
+  display: block;
+  min-width: 0;
+}
+
+.graph-overview-stat span {
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.graph-overview-stat strong {
+  margin-top: 6px;
+  color: var(--color-text);
+  font-size: 24px;
+  line-height: 1.1;
+  font-weight: 780;
+}
+
+.graph-overview-list-card .ant-card-body {
+  padding: 0;
 }
 
 .graph-list-pane {
@@ -458,6 +502,7 @@ select {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
@@ -477,6 +522,17 @@ select {
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+.graph-workspace--detail {
+  height: auto;
+}
+
+.graph-detail-empty {
+  min-height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .graph-summary-card {
@@ -711,6 +767,21 @@ select {
 
 .analysis-query-results,
 .analysis-result-stack {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.build-workbench-grid {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(360px, 1fr) minmax(360px, 0.9fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.build-workbench-primary {
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -1092,6 +1163,10 @@ select {
     grid-template-columns: 1fr;
   }
 
+  .graph-overview-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
   .graph-list-pane {
     position: static;
     max-height: none;
@@ -1118,6 +1193,10 @@ select {
     grid-template-columns: 1fr;
   }
 
+  .build-workbench-grid {
+    grid-template-columns: 1fr;
+  }
+
   .analysis-status-header {
     flex-direction: column;
   }
@@ -1140,6 +1219,10 @@ select {
   }
 
   .graph-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .graph-overview-stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -1225,6 +1308,10 @@ select {
   }
 
   .graph-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .graph-overview-stats {
     grid-template-columns: 1fr;
   }
 

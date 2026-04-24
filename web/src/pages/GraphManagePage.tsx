@@ -1,7 +1,6 @@
 import {
   Button,
   Card,
-  Descriptions,
   Empty,
   Form,
   Input,
@@ -17,6 +16,7 @@ import {
   message,
 } from "antd";
 import { useEffect, useRef, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 
 import {
   buildGraph,
@@ -88,6 +88,8 @@ function getSourceFileBuildStatusLabel(status?: string | null) {
 }
 
 export function GraphManagePage() {
+  const navigate = useNavigate();
+  const { graphId: routeGraphId } = useParams<{ graphId?: string }>();
   const [messageApi, contextHolder] = message.useMessage();
   const [graphs, setGraphs] = useState<GraphSummary[]>([]);
   const [profiles, setProfiles] = useState<ModelProfileResponse[]>([]);
@@ -109,6 +111,7 @@ export function GraphManagePage() {
   const [createForm] = Form.useForm<GraphCreateRequest>();
   const hydrateRequestRef = useRef(0);
   const selectedGraphIdRef = useRef<string>();
+  const isDetailView = Boolean(routeGraphId);
 
   function updateGraphSummaryStatus(graphId: string, status: string) {
     setGraphs((current) =>
@@ -138,6 +141,10 @@ export function GraphManagePage() {
     setBuildAttemptError(null);
     clearPrimaryGraphState();
     setSelectedGraphId(graphId);
+  }
+
+  function openGraphManagement(graph: GraphSummary) {
+    navigate(`/graphs/${graph.id}`);
   }
 
   function buildFileStatusTagColor(status?: string | null) {
@@ -177,12 +184,13 @@ export function GraphManagePage() {
       setListLoading(true);
       const payload = await getGraphs();
       setGraphs(payload.items);
-      const nextSelectedGraphId =
+      if (
         selectedGraphIdRef.current &&
-        payload.items.some((item) => item.id === selectedGraphIdRef.current)
-          ? selectedGraphIdRef.current
-          : payload.items[0]?.id;
-      switchGraph(nextSelectedGraphId);
+        !payload.items.some((item) => item.id === selectedGraphIdRef.current)
+      ) {
+        switchGraph(undefined);
+        navigate("/graphs", { replace: true });
+      }
     } catch (error) {
       messageApi.error(error instanceof Error ? error.message : "图谱列表加载失败。");
     } finally {
@@ -334,7 +342,7 @@ export function GraphManagePage() {
       setCreateOpen(false);
       createForm.resetFields();
       await loadGraphs();
-      switchGraph(createdGraph.id);
+      navigate(`/graphs/${createdGraph.id}`);
     } catch (error) {
       messageApi.error(error instanceof Error ? error.message : "图谱创建失败。");
     } finally {
@@ -494,6 +502,7 @@ export function GraphManagePage() {
       setGraphs((current) => current.filter((item) => item.id !== graph.id));
       if (selectedGraphId === graph.id) {
         switchGraph(undefined);
+        navigate("/graphs", { replace: true });
       }
 
       if (payload.cancelled_build) {
@@ -519,6 +528,10 @@ export function GraphManagePage() {
     void loadProfiles();
     void loadSystemConfig();
   }, []);
+
+  useEffect(() => {
+    switchGraph(routeGraphId);
+  }, [routeGraphId]);
 
   useEffect(() => {
     if (!selectedGraphId) {
@@ -547,6 +560,21 @@ export function GraphManagePage() {
   }, [graphStatus?.status, selectedGraphId]);
 
   const selectedStatusMeta = graphStatus ? getGraphStatusMeta(graphStatus.status) : null;
+  const waitingGraphCount = graphs.filter((graph) =>
+    ["awaiting_upload", "awaiting_build", "artifacts_deleted", "initialized"].includes(
+      graph.status,
+    ),
+  ).length;
+  const buildingGraphCount = graphs.filter((graph) => graph.status === "building").length;
+  const readyGraphCount = graphs.filter((graph) => graph.status === "ready").length;
+  const boundModelGraphCount = graphs.filter((graph) => graph.model_profile_id).length;
+  const graphOverviewStats = [
+    { label: "图谱总数", value: graphs.length },
+    { label: "待处理", value: waitingGraphCount },
+    { label: "构建中", value: buildingGraphCount },
+    { label: "可查询", value: readyGraphCount },
+    { label: "已绑定模型", value: boundModelGraphCount },
+  ];
 
   return (
     <div className="page-stack analysis-page analysis-page--graphs">
@@ -555,50 +583,20 @@ export function GraphManagePage() {
         <div>
           <Typography.Title level={3}>图谱管理</Typography.Title>
           <Typography.Paragraph className="muted-text">
-            创建图谱、上传源文件、触发构建，并查看构建产物与切片结果。
+            {isDetailView
+              ? "上传源文件、触发构建，并查看构建产物与切片结果。"
+              : "查看图谱统计，创建图谱，并进入单个图谱的管理工作台。"}
           </Typography.Paragraph>
         </div>
-        <div className="analysis-hero-meta">
-          <span className="analysis-chip">知识图谱</span>
-          <span className="analysis-chip analysis-chip--accent">分析控制台</span>
-        </div>
+        {isDetailView ? (
+          <Button onClick={() => navigate("/graphs")}>返回列表</Button>
+        ) : null}
       </div>
 
-      <div className="graph-workbench-layout">
-        <section className="graph-list-pane">
-          <div className="graph-pane-header">
-            <div>
-              <Typography.Title level={5} style={{ margin: 0 }}>
-                图谱项目列表
-              </Typography.Title>
-              <div className="muted-text" style={{ fontSize: 13, marginTop: 4 }}>
-                选择图谱后在右侧工作台处理上传、构建和结果查看。
-              </div>
-            </div>
-            <Space className="graph-pane-actions">
-              <Button onClick={() => void loadGraphs()}>
-                刷新
-              </Button>
-              <Button type="primary" onClick={openCreateModal}>
-                新建图谱
-              </Button>
-            </Space>
-          </div>
-          
-          <GraphTable
-            graphs={graphs}
-            loading={listLoading}
-            selectedGraphId={selectedGraphId}
-            compact
-            onRefresh={() => void loadGraphs()}
-            onSelect={(graph) => switchGraph(graph.id)}
-            onDelete={(graph) => void handleDeleteGraph(graph)}
-          />
-        </section>
-
+      {isDetailView ? (
         <Spin spinning={detailLoading} wrapperClassName="graph-workspace-spin">
           {graphDetail ? (
-            <div className="graph-workspace">
+            <div className="graph-workspace graph-workspace--detail">
               <Card
                 className="surface-card analysis-card analysis-card--spotlight graph-summary-card"
                 title={graphDetail.name}
@@ -638,120 +636,86 @@ export function GraphManagePage() {
 
               <Tabs
                 className="graph-workspace-tabs"
-                defaultActiveKey="build"
+                defaultActiveKey="workbench"
                 items={[
                   {
-                    key: "overview",
-                    label: "概览",
+                    key: "workbench",
+                    label: "构建工作台",
                     children: (
-                      <Card className="analysis-card" title="图谱信息">
-                        <Descriptions column={2} size="small">
-                          <Descriptions.Item label="图谱ID">{graphDetail.id}</Descriptions.Item>
-                          <Descriptions.Item label="模型配置">
-                            {graphDetail.model_profile_id || "未绑定"}
-                          </Descriptions.Item>
-                          <Descriptions.Item label="描述" span={2}>
-                            {graphDetail.description || "暂无描述"}
-                          </Descriptions.Item>
-                          <Descriptions.Item label="保存位置" span={2}>
-                            {graphDetail.root_dir}
-                          </Descriptions.Item>
-                          <Descriptions.Item label="创建时间">
-                            {graphDetail.created_at}
-                          </Descriptions.Item>
-                          <Descriptions.Item label="最近构建时间">
-                            {graphDetail.last_build_at || "暂无"}
-                          </Descriptions.Item>
-                        </Descriptions>
-                      </Card>
-                    ),
-                  },
-                  {
-                    key: "upload",
-                    label: "源文件上传",
-                    children: (
-                      <UploadPanel
-                        graphId={selectedGraphId}
-                        loading={detailLoading}
-                        onUploaded={async () => {
-                          if (selectedGraphId) {
-                            await hydrateGraph(selectedGraphId);
-                          }
-                        }}
-                      />
-                    ),
-                  },
-                  {
-                    key: "build",
-                    label: "构建状态",
-                    children: (
-                      <BuildStatusCard
-                        status={graphStatus}
-                        actionError={buildAttemptError}
-                        busy={actionLoading}
-                        buildMethod={buildMethod}
-                        onBuildMethodChange={setBuildMethod}
-                        onStartBuild={async () => handleBuildAction("start", false)}
-                        onResumeBuild={async () => handleBuildAction("resume", false)}
-                        onFullRebuild={async () => handleBuildAction("start", true)}
-                        onRefresh={async () => {
-                          if (selectedGraphId) {
-                            await hydrateGraph(selectedGraphId);
-                          }
-                        }}
-                        onClearArtifacts={async () => handleClearArtifacts()}
-                      />
-                    ),
-                  },
-                  {
-                    key: "files",
-                    label: "源文件",
-                    children: (
-                      <Card className="analysis-card" title="源文件列表">
-                        {graphFiles && graphFiles.items.length > 0 ? (
-                          <List
-                            size="small"
-                            dataSource={graphFiles.items}
-                            renderItem={(item) => (
-                              <List.Item>
-                                <Space direction="vertical" size={2} style={{ width: "100%" }}>
-                                  <Space wrap>
-                                    <Typography.Text strong>{item.name}</Typography.Text>
-                                    {item.build_status ? (
-                                      <Tag color={buildFileStatusTagColor(item.build_status)}>
-                                        {getSourceFileBuildStatusLabel(item.build_status)}
-                                      </Tag>
-                                    ) : null}
-                                    {item.is_current ? <Tag color="processing">当前</Tag> : null}
-                                  </Space>
-                                  <Typography.Text className="muted-text">
-                                    {item.extension} · {item.size_bytes} 字节
-                                  </Typography.Text>
-                                  <Typography.Text className="muted-text">
-                                    尝试次数 {item.attempt_count ?? 0}
-                                  </Typography.Text>
-                                  {item.last_built_at ? (
-                                    <Typography.Text className="muted-text">
-                                      上次构建 {item.last_built_at}
-                                    </Typography.Text>
-                                  ) : null}
-                                  {item.last_build_error ? (
-                                    <Typography.Text type="danger">
-                                      {item.last_build_error}
-                                    </Typography.Text>
-                                  ) : null}
-                                  <Typography.Text className="muted-text">
-                                    文档数 {item.document_count ?? 0} | 切片数{" "}
-                                    {item.text_unit_count ?? 0}
-                                  </Typography.Text>
-                                </Space>
-                              </List.Item>
-                            )}
+                      <div className="build-workbench-grid">
+                        <div className="build-workbench-primary">
+                          <UploadPanel
+                            graphId={selectedGraphId}
+                            loading={detailLoading}
+                            onUploaded={async () => {
+                              if (selectedGraphId) {
+                                await hydrateGraph(selectedGraphId);
+                              }
+                            }}
                           />
-                        ) : (
-                          <Empty description="暂无已上传的源文件。" />
-                        )}
-                      </Card>
+                          <Card className="analysis-card" title="源文件列表">
+                            {graphFiles && graphFiles.items.length > 0 ? (
+                              <List
+                                size="small"
+                                dataSource={graphFiles.items}
+                                renderItem={(item) => (
+                                  <List.Item>
+                                    <Space direction="vertical" size={2} style={{ width: "100%" }}>
+                                      <Space wrap>
+                                        <Typography.Text strong>{item.name}</Typography.Text>
+                                        {item.build_status ? (
+                                          <Tag color={buildFileStatusTagColor(item.build_status)}>
+                                            {getSourceFileBuildStatusLabel(item.build_status)}
+                                          </Tag>
+                                        ) : null}
+                                        {item.is_current ? <Tag color="processing">当前</Tag> : null}
+                                      </Space>
+                                      <Typography.Text className="muted-text">
+                                        {item.extension} · {item.size_bytes} 字节
+                                      </Typography.Text>
+                                      <Typography.Text className="muted-text">
+                                        尝试次数 {item.attempt_count ?? 0}
+                                      </Typography.Text>
+                                      {item.last_built_at ? (
+                                        <Typography.Text className="muted-text">
+                                          上次构建 {item.last_built_at}
+                                        </Typography.Text>
+                                      ) : null}
+                                      {item.last_build_error ? (
+                                        <Typography.Text type="danger">
+                                          {item.last_build_error}
+                                        </Typography.Text>
+                                      ) : null}
+                                      <Typography.Text className="muted-text">
+                                        文档数 {item.document_count ?? 0} | 切片数{" "}
+                                        {item.text_unit_count ?? 0}
+                                      </Typography.Text>
+                                    </Space>
+                                  </List.Item>
+                                )}
+                              />
+                            ) : (
+                              <Empty description="暂无已上传的源文件。" />
+                            )}
+                          </Card>
+                        </div>
+                        <BuildStatusCard
+                          status={graphStatus}
+                          actionError={buildAttemptError}
+                          busy={actionLoading}
+                          buildMethod={buildMethod}
+                          onBuildMethodChange={setBuildMethod}
+                          onStartBuild={async () => handleBuildAction("start", false)}
+                          onResumeBuild={async () => handleBuildAction("resume", false)}
+                          onFullRebuild={async () => handleBuildAction("start", true)}
+                          onRefresh={async () => {
+                            if (selectedGraphId) {
+                              await hydrateGraph(selectedGraphId);
+                            }
+                          }}
+                          onClearArtifacts={async () => handleClearArtifacts()}
+                        />
+                      </div>
                     ),
                   },
                   {
@@ -781,12 +745,47 @@ export function GraphManagePage() {
               />
             </div>
           ) : (
-            <section className="page-section" style={{ minHeight: 300, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <Empty description="请在上方选择图谱，或新建一个图谱。" />
+            <section className="page-section graph-detail-empty">
+              <Empty description="未找到这个图谱，或图谱详情暂不可用。">
+                <Button onClick={() => navigate("/graphs")}>返回图谱列表</Button>
+              </Empty>
             </section>
           )}
         </Spin>
-      </div>
+      ) : (
+        <div className="graph-overview">
+          <div className="graph-overview-stats">
+            {graphOverviewStats.map((stat) => (
+              <div className="graph-overview-stat" key={stat.label}>
+                <span>{stat.label}</span>
+                <strong>{stat.value}</strong>
+              </div>
+            ))}
+          </div>
+
+          <Card
+            className="surface-card analysis-card graph-overview-list-card"
+            title="图谱项目列表"
+            extra={
+              <Space className="graph-pane-actions">
+                <Button onClick={() => void loadGraphs()}>刷新</Button>
+                <Button type="primary" onClick={openCreateModal}>
+                  新建图谱
+                </Button>
+              </Space>
+            }
+          >
+            <GraphTable
+              graphs={graphs}
+              loading={listLoading}
+              selectedGraphId={selectedGraphId}
+              onRefresh={() => void loadGraphs()}
+              onSelect={openGraphManagement}
+              onDelete={(graph) => void handleDeleteGraph(graph)}
+            />
+          </Card>
+        </div>
+      )}
 
       <Modal
         open={createOpen}
