@@ -726,6 +726,18 @@ select {
   font-weight: 760 !important;
 }
 
+.section-heading-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.section-heading-row .section-heading {
+  margin-bottom: 0 !important;
+}
+
 .muted-text {
   color: var(--color-text-muted) !important;
 }
@@ -1058,6 +1070,164 @@ select {
 
 .analysis-model-table .ant-table-cell-ellipsis {
   white-space: nowrap;
+}
+
+.model-config-workbench {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.model-config-sidebar,
+.model-config-main {
+  min-width: 0;
+}
+
+.model-config-sidebar {
+  position: sticky;
+  top: 28px;
+}
+
+.model-settings-card .ant-card-body {
+  padding: 16px;
+}
+
+.model-settings-form .ant-form-item:last-of-type {
+  margin-bottom: 18px;
+}
+
+.model-catalog-heading {
+  align-items: flex-start;
+}
+
+.model-catalog-heading .muted-text {
+  display: block;
+  margin-top: 4px;
+  font-size: 13px;
+}
+
+.model-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.model-summary-item {
+  min-width: 0;
+  padding: 13px 14px;
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-xs);
+}
+
+.model-summary-item span,
+.model-summary-item strong,
+.model-summary-item em {
+  display: block;
+  min-width: 0;
+}
+
+.model-summary-item span {
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.model-summary-item strong {
+  margin-top: 5px;
+  color: var(--color-text);
+  font-size: 20px;
+  line-height: 1.2;
+  font-weight: 780;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.model-summary-item em {
+  margin-top: 4px;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-style: normal;
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.model-catalog-card .ant-card-body {
+  padding: 16px 18px 18px;
+}
+
+.model-table-title {
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.model-table-title span {
+  flex: 0 0 auto;
+}
+
+.model-table-title small {
+  min-width: 0;
+  color: var(--color-text-faint);
+  font-size: 12px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.model-profile-cell {
+  min-width: 0;
+}
+
+.model-profile-cell .ant-typography {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.model-profile-meta {
+  margin-top: 3px;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.model-key-mask,
+.model-key-empty {
+  font-family: "Fira Code", Consolas, monospace;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.model-key-mask {
+  color: var(--color-text);
+}
+
+.model-key-empty {
+  color: var(--color-text-faint);
+}
+
+.model-row-actions {
+  row-gap: 8px;
+}
+
+.model-row-actions .ant-btn-sm {
+  min-height: 30px;
+  padding-inline: 9px;
 }
 
 .ant-btn {
@@ -1446,6 +1616,18 @@ select {
     grid-template-columns: 1fr;
   }
 
+  .model-config-workbench {
+    grid-template-columns: 1fr;
+  }
+
+  .model-config-sidebar {
+    position: static;
+  }
+
+  .model-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .build-workbench-assets {
     grid-template-columns: 1fr;
   }
@@ -1483,6 +1665,10 @@ select {
   }
 
   .graph-overview-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .model-summary-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -1596,6 +1782,15 @@ select {
   }
 
   .graph-overview-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .section-heading-row,
+  .model-catalog-heading {
+    flex-direction: column;
+  }
+
+  .model-summary-grid {
     grid-template-columns: 1fr;
   }
 
