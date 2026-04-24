@@ -230,7 +230,6 @@ select {
   color: var(--color-primary);
   background: var(--color-primary-soft);
   border-color: rgba(37, 99, 235, 0.18);
-  box-shadow: inset 3px 0 0 var(--color-primary);
 }
 
 .sidebar-nav-icon {
@@ -1947,10 +1946,6 @@ select {
     min-height: 54px;
     justify-content: center;
     padding: 9px;
-  }
-
-  .sidebar-nav-item.active {
-    box-shadow: inset 0 -3px 0 var(--color-primary);
   }
 
   .app-main {
