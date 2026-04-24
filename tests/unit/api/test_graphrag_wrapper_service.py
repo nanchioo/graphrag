@@ -2,6 +2,7 @@
 # Licensed under the MIT License
 
 import asyncio
+import logging
 import os
 from pathlib import Path
 from types import SimpleNamespace
@@ -960,3 +961,37 @@ async def test_get_status_includes_resumable_manifest_counts(
     assert payload.completed_file_count == 1
     assert payload.failed_file_count == 1
     assert payload.pending_file_count == 1
+
+
+def test_close_project_log_handlers_removes_shared_file_handler_under_project(
+    tmp_path: Path,
+):
+    root_dir = tmp_path / "graph-project"
+    log_path = root_dir / "logs" / "query.log"
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    outside_log_path = tmp_path / "outside.log"
+
+    project_handler = logging.FileHandler(log_path, encoding="utf-8")
+    outside_handler = logging.FileHandler(outside_log_path, encoding="utf-8")
+    graphrag_logger = logging.getLogger("graphrag")
+    llm_logger = logging.getLogger("graphrag_llm")
+
+    graphrag_logger.addHandler(project_handler)
+    graphrag_logger.addHandler(outside_handler)
+    llm_logger.addHandler(project_handler)
+
+    try:
+        GraphRagWrapperService().close_project_log_handlers(root_dir)
+
+        assert project_handler not in graphrag_logger.handlers
+        assert project_handler not in llm_logger.handlers
+        assert project_handler.stream is None
+        assert outside_handler in graphrag_logger.handlers
+        assert outside_handler.stream is not None
+    finally:
+        for logger in (graphrag_logger, llm_logger):
+            for handler in (project_handler, outside_handler):
+                if handler in logger.handlers:
+                    logger.removeHandler(handler)
+        project_handler.close()
+        outside_handler.close()

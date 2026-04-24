@@ -141,6 +141,7 @@ async def delete_graph(
     cancelled_build = await graphrag_wrapper_service.cancel_active_build(graph_id)
 
     if root_dir.exists():
+        graphrag_wrapper_service.close_project_log_handlers(root_dir)
         shutil.rmtree(root_dir)
 
     deleted = graph_registry_service.delete_graph(graph_id)

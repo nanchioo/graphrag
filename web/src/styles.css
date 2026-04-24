@@ -140,8 +140,10 @@ select {
   justify-content: center;
   border-radius: var(--radius-logo);
   color: #fff;
-  background: linear-gradient(135deg, #2563eb 0%, #0f766e 54%, #d97706 100%);
-  box-shadow: 0 12px 28px rgba(37, 99, 235, 0.22);
+  background:
+    radial-gradient(circle at 72% 28%, rgba(255, 255, 255, 0.26), transparent 32%),
+    linear-gradient(135deg, #2563eb 0%, #0891b2 54%, #0f766e 100%);
+  box-shadow: 0 12px 28px rgba(8, 145, 178, 0.22);
 }
 
 .sidebar-logo svg {
@@ -155,6 +157,15 @@ select {
   stroke-width: 1.9;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+
+.sidebar-logo svg path.layer {
+  stroke-width: 1.65;
+}
+
+.sidebar-logo svg circle {
+  fill: currentColor;
+  stroke: none;
 }
 
 .sidebar-brand-text {

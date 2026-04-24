@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import os
 import shutil
 from contextlib import contextmanager
@@ -110,6 +111,25 @@ class GraphRagWrapperService:
         except asyncio.CancelledError:
             pass
         return True
+
+    def close_project_log_handlers(self, root_dir: Path) -> None:
+        """Close file log handlers that point inside a project workspace."""
+        resolved_root = root_dir.resolve()
+        handlers_to_close: list[logging.Handler] = []
+        seen_handlers: set[int] = set()
+
+        for logger in self._iter_existing_loggers():
+            for handler in list(logger.handlers):
+                if not self._is_project_file_handler(handler, resolved_root):
+                    continue
+                logger.removeHandler(handler)
+                handler_id = id(handler)
+                if handler_id not in seen_handlers:
+                    seen_handlers.add(handler_id)
+                    handlers_to_close.append(handler)
+
+        for handler in handlers_to_close:
+            handler.close()
 
     def build_model_env_overrides(
         self, profile: StoredModelProfile
@@ -720,6 +740,7 @@ class GraphRagWrapperService:
 
     async def _delete_artifact_paths(self, root_dir: Path) -> list[str]:
         artifact_roots = await self._resolve_artifact_roots(root_dir)
+        self.close_project_log_handlers(root_dir)
         deleted: list[str] = []
         for path in sorted(artifact_roots, key=lambda item: item.as_posix()):
             if not path.exists():
@@ -762,6 +783,27 @@ class GraphRagWrapperService:
             return False
         else:
             return True
+
+    def _iter_existing_loggers(self) -> Iterator[logging.Logger]:
+        yield logging.getLogger()
+        for candidate in logging.Logger.manager.loggerDict.values():
+            if isinstance(candidate, logging.Logger):
+                yield candidate
+
+    def _is_project_file_handler(
+        self,
+        handler: logging.Handler,
+        root_dir: Path,
+    ) -> bool:
+        if not isinstance(handler, logging.FileHandler):
+            return False
+
+        try:
+            handler_path = Path(handler.baseFilename).resolve()
+        except OSError:
+            return False
+
+        return self._is_within(handler_path, root_dir)
 
     def _ensure_documents_available(self, documents: list[Any]) -> None:
         if len(documents) > 0:

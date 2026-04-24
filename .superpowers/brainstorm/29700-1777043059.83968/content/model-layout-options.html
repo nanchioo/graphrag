@@ -1,0 +1,296 @@
+<style>
+  .layout-note {
+    margin: 0 0 18px;
+    color: #5b667a;
+    line-height: 1.6;
+  }
+  .layout-options {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+  }
+  .layout-card {
+    cursor: pointer;
+  }
+  .mini-shell {
+    height: 330px;
+    padding: 12px;
+    border: 1px solid #d9e2ef;
+    border-radius: 8px;
+    background: #f7f9fc;
+    overflow: hidden;
+  }
+  .mini-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .mini-title {
+    width: 34%;
+    height: 14px;
+    border-radius: 5px;
+    background: #172033;
+  }
+  .mini-button {
+    width: 58px;
+    height: 24px;
+    border-radius: 6px;
+    background: #2563eb;
+  }
+  .mini-subtitle {
+    width: 64%;
+    height: 9px;
+    margin-bottom: 14px;
+    border-radius: 5px;
+    background: #c8d3e2;
+  }
+  .mini-section-label {
+    width: 90px;
+    height: 11px;
+    margin: 12px 0 8px;
+    border-radius: 5px;
+    background: #172033;
+  }
+  .mini-panel,
+  .mini-row,
+  .mini-card-item,
+  .mini-stat {
+    border: 1px solid #edf1f7;
+    border-radius: 8px;
+    background: #fff;
+  }
+  .mini-panel {
+    padding: 10px;
+  }
+  .mini-field {
+    height: 28px;
+    margin-bottom: 8px;
+    border: 1px solid #d9e2ef;
+    border-radius: 6px;
+    background: #fbfdff;
+  }
+  .mini-field.short {
+    width: 62%;
+  }
+  .mini-save {
+    width: 78px;
+    height: 24px;
+    margin-top: 4px;
+    border-radius: 6px;
+    background: #2563eb;
+  }
+  .option-a-grid {
+    display: grid;
+    grid-template-columns: 120px minmax(0, 1fr);
+    gap: 10px;
+  }
+  .option-a-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .option-a-main {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .mini-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 7px;
+  }
+  .mini-stat {
+    height: 42px;
+    background: #f4f7fb;
+  }
+  .mini-row {
+    height: 48px;
+    display: grid;
+    grid-template-columns: 1.2fr 1.6fr 0.8fr 1.2fr;
+    gap: 8px;
+    align-items: center;
+    padding: 8px;
+  }
+  .mini-line {
+    height: 8px;
+    border-radius: 5px;
+    background: #c8d3e2;
+  }
+  .mini-line.dark {
+    background: #172033;
+  }
+  .mini-line.blue {
+    background: #8fb3ff;
+  }
+  .mini-wide-settings {
+    height: 118px;
+  }
+  .mini-table {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+  .mini-card-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .mini-card-item {
+    min-height: 72px;
+    padding: 9px;
+  }
+  .choice-meta {
+    margin: 12px 0 0;
+    color: #5b667a;
+    font-size: 13px;
+    line-height: 1.55;
+  }
+  @media (max-width: 980px) {
+    .layout-options {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<h2>模型配置页布局方向</h2>
+<p class="layout-note">这个页面现在主要问题是上下两块都过宽，信息密度低，模型列表的操作区被挤在表格右侧。下面三个方向都保留现有功能，只调整布局和视觉层级。</p>
+
+<div class="cards layout-options">
+  <div class="card layout-card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mini-shell">
+        <div class="mini-top">
+          <div class="mini-title"></div>
+          <div class="mini-button"></div>
+        </div>
+        <div class="mini-subtitle"></div>
+        <div class="option-a-grid">
+          <div class="option-a-sidebar">
+            <div class="mini-section-label"></div>
+            <div class="mini-panel">
+              <div class="mini-field"></div>
+              <div class="mini-field"></div>
+              <div class="mini-field short"></div>
+              <div class="mini-save"></div>
+            </div>
+          </div>
+          <div class="option-a-main">
+            <div class="mini-stat-grid">
+              <div class="mini-stat"></div>
+              <div class="mini-stat"></div>
+              <div class="mini-stat"></div>
+            </div>
+            <div class="mini-row">
+              <div class="mini-line dark"></div>
+              <div class="mini-line"></div>
+              <div class="mini-line blue"></div>
+              <div class="mini-line"></div>
+            </div>
+            <div class="mini-row">
+              <div class="mini-line dark"></div>
+              <div class="mini-line"></div>
+              <div class="mini-line"></div>
+              <div class="mini-line"></div>
+            </div>
+            <div class="mini-row">
+              <div class="mini-line dark"></div>
+              <div class="mini-line"></div>
+              <div class="mini-line"></div>
+              <div class="mini-line"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A. 双栏工作台</h3>
+      <p>左侧放系统默认路径和默认模型，右侧放模型概览和模型目录。推荐：更像后台配置页，减少纵向滚动。</p>
+      <p class="choice-meta">适合：模型数量会增长、需要经常测试连接或切换默认模型。</p>
+    </div>
+  </div>
+
+  <div class="card layout-card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mini-shell">
+        <div class="mini-top">
+          <div class="mini-title"></div>
+          <div class="mini-button"></div>
+        </div>
+        <div class="mini-subtitle"></div>
+        <div class="mini-section-label"></div>
+        <div class="mini-panel mini-wide-settings">
+          <div class="mini-field"></div>
+          <div class="mini-field"></div>
+          <div class="mini-field short"></div>
+        </div>
+        <div class="mini-section-label"></div>
+        <div class="mini-table">
+          <div class="mini-row">
+            <div class="mini-line dark"></div>
+            <div class="mini-line"></div>
+            <div class="mini-line blue"></div>
+            <div class="mini-line"></div>
+          </div>
+          <div class="mini-row">
+            <div class="mini-line dark"></div>
+            <div class="mini-line"></div>
+            <div class="mini-line"></div>
+            <div class="mini-line"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B. 上下分区强化</h3>
+      <p>保留当前上下结构，但压缩表单高度、增强标题和分隔，让页面更整齐。</p>
+      <p class="choice-meta">适合：想改动最小，保留现在的阅读顺序。</p>
+    </div>
+  </div>
+
+  <div class="card layout-card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mini-shell">
+        <div class="mini-top">
+          <div class="mini-title"></div>
+          <div class="mini-button"></div>
+        </div>
+        <div class="mini-subtitle"></div>
+        <div class="mini-stat-grid">
+          <div class="mini-stat"></div>
+          <div class="mini-stat"></div>
+          <div class="mini-stat"></div>
+        </div>
+        <div class="mini-section-label"></div>
+        <div class="mini-card-grid">
+          <div class="mini-card-item">
+            <div class="mini-line dark"></div>
+            <div class="mini-line" style="margin-top:10px;width:80%"></div>
+            <div class="mini-line blue" style="margin-top:10px;width:48%"></div>
+          </div>
+          <div class="mini-card-item">
+            <div class="mini-line dark"></div>
+            <div class="mini-line" style="margin-top:10px;width:72%"></div>
+            <div class="mini-line" style="margin-top:10px;width:56%"></div>
+          </div>
+          <div class="mini-card-item">
+            <div class="mini-line dark"></div>
+            <div class="mini-line" style="margin-top:10px;width:86%"></div>
+            <div class="mini-line" style="margin-top:10px;width:54%"></div>
+          </div>
+          <div class="mini-card-item">
+            <div class="mini-line dark"></div>
+            <div class="mini-line" style="margin-top:10px;width:76%"></div>
+            <div class="mini-line" style="margin-top:10px;width:50%"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C. 卡片式目录</h3>
+      <p>把每个模型做成配置卡片，默认、连接状态和操作按钮直接放在卡片内。</p>
+      <p class="choice-meta">适合：模型数量少且希望视觉更轻，但大量模型时扫描效率会低一些。</p>
+    </div>
+  </div>
+</div>

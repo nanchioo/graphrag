@@ -11,7 +11,7 @@
       "name": "通义千问",
       "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
       "api_key": "sk-10a9134787c741439acf399614f7659f",
-      "model_name": "qwen3.6-flash",
+      "model_name": "qwen3.6-plus-2026-04-02",
       "embedding_model_name": "text-embedding-v3",
       "api_version": ""
     }

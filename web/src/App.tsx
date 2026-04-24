@@ -61,9 +61,13 @@ function AppShell() {
         >
           <span className="sidebar-logo">
             <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M12 3 4.2 7.05 12 11.1l7.8-4.05L12 3Z" />
-              <path d="M4.2 12.1 12 16.15l7.8-4.05" />
-              <path d="M4.2 17.05 12 21.1l7.8-4.05" />
+              <path className="layer" d="M5 8.3 12 4.7l7 3.6-7 3.6-7-3.6Z" />
+              <path className="layer" d="M5 12.3 12 15.9l7-3.6" />
+              <path className="layer" d="M5 16.1 12 19.7l7-3.6" />
+              <path d="M8.7 8.4h6.6M9.6 14.2l4.8-5.2M14.4 14.2 9.6 9" />
+              <circle cx="8.7" cy="8.4" r="1.25" />
+              <circle cx="15.3" cy="8.4" r="1.25" />
+              <circle cx="12" cy="14.5" r="1.25" />
             </svg>
           </span>
           <span className="sidebar-brand-text">

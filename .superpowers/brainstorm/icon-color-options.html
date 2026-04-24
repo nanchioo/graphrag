@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GraphRAG Icon Color Options</title>
+    <style>
+      :root {
+        --bg: #f7f9fc;
+        --surface: #ffffff;
+        --surface-soft: #fbfdff;
+        --border: #d9e2ef;
+        --border-soft: #edf1f7;
+        --text: #172033;
+        --muted: #5b667a;
+        --primary: #2563eb;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--bg);
+        color: var(--text);
+        font-family: Inter, "Segoe UI", "Microsoft YaHei", sans-serif;
+      }
+
+      main {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 34px 28px 48px;
+      }
+
+      h1 {
+        margin: 0 0 8px;
+        font-size: 24px;
+        line-height: 1.2;
+      }
+
+      .subtitle {
+        margin: 0 0 24px;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 16px;
+      }
+
+      .option {
+        min-width: 0;
+        padding: 16px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--surface);
+        box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+      }
+
+      .option h2 {
+        margin: 0 0 6px;
+        font-size: 15px;
+      }
+
+      .option p {
+        min-height: 60px;
+        margin: 0 0 14px;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.55;
+      }
+
+      .preview {
+        min-height: 164px;
+        padding: 14px;
+        border: 1px solid var(--border-soft);
+        border-radius: 8px;
+        background: var(--surface-soft);
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-height: 58px;
+        padding: 8px;
+        border-radius: 8px;
+      }
+
+      .logo {
+        width: 42px;
+        height: 42px;
+        flex: 0 0 42px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        border-radius: 14px;
+        box-shadow: 0 12px 28px rgba(37, 99, 235, 0.2);
+      }
+
+      .logo svg {
+        width: 25px;
+        height: 25px;
+      }
+
+      .logo path,
+      .logo circle {
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.9;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      .logo circle {
+        fill: currentColor;
+        stroke: none;
+      }
+
+      .layer {
+        stroke-width: 1.65;
+      }
+
+      .brand-copy {
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .title {
+        font-size: 18px;
+        font-weight: 760;
+        line-height: 1.15;
+      }
+
+      .caption {
+        margin-top: 3px;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .nav-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-height: 58px;
+        margin-top: 12px;
+        padding: 10px 12px;
+        border: 1px solid rgba(37, 99, 235, 0.18);
+        border-radius: 8px;
+        background: #eaf2ff;
+        color: var(--primary);
+        box-shadow: inset 3px 0 0 var(--primary);
+      }
+
+      .mini-icon {
+        width: 34px;
+        height: 34px;
+        flex: 0 0 34px;
+        border: 1px solid rgba(37, 99, 235, 0.25);
+        border-radius: 6px;
+        background: #fff;
+      }
+
+      .nav-copy strong,
+      .nav-copy span {
+        display: block;
+      }
+
+      .nav-copy strong {
+        font-size: 13px;
+      }
+
+      .nav-copy span {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .swatches {
+        display: flex;
+        gap: 7px;
+        margin-top: 14px;
+        padding-top: 14px;
+        border-top: 1px solid var(--border-soft);
+      }
+
+      .swatch {
+        width: 22px;
+        height: 22px;
+        border-radius: 6px;
+        border: 1px solid rgba(15, 23, 42, 0.12);
+      }
+
+      .recommended {
+        outline: 2px solid rgba(37, 99, 235, 0.24);
+        outline-offset: 2px;
+      }
+
+      .palette-current {
+        background:
+          radial-gradient(circle at 72% 28%, rgba(255, 255, 255, 0.28), transparent 32%),
+          linear-gradient(135deg, #2563eb 0%, #0f766e 54%, #d97706 100%);
+      }
+
+      .palette-calm {
+        background:
+          radial-gradient(circle at 72% 28%, rgba(255, 255, 255, 0.26), transparent 32%),
+          linear-gradient(135deg, #2563eb 0%, #0891b2 54%, #0f766e 100%);
+      }
+
+      .palette-slate {
+        background:
+          radial-gradient(circle at 72% 28%, rgba(255, 255, 255, 0.26), transparent 32%),
+          linear-gradient(135deg, #1e40af 0%, #0e7490 58%, #334155 100%);
+      }
+
+      .palette-fresh {
+        background:
+          radial-gradient(circle at 72% 28%, rgba(255, 255, 255, 0.28), transparent 32%),
+          linear-gradient(135deg, #0ea5e9 0%, #14b8a6 52%, #22c55e 100%);
+      }
+
+      @media (max-width: 1040px) {
+        .grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 640px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>只换左上角图标颜色</h1>
+      <p class="subtitle">我保留“图谱节点 + 数据层”的图形，只对比底色。A 是现在的橙色收尾，B 是我推荐的无橙版本。</p>
+      <section class="grid">
+        <article class="option">
+          <h2>A. 当前蓝绿橙</h2>
+          <p>保留现状。识别度高，但橙色在小图标底部容易显得偏旧、偏杂。</p>
+          <div class="preview">
+            <div class="brand">
+              <span class="logo palette-current">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path class="layer" d="M5 8.3 12 4.7l7 3.6-7 3.6-7-3.6Z" />
+                  <path class="layer" d="M5 12.3 12 15.9l7-3.6" />
+                  <path class="layer" d="M5 16.1 12 19.7l7-3.6" />
+                  <path d="M8.7 8.4h6.6M9.6 14.2l4.8-5.2M14.4 14.2 9.6 9" />
+                  <circle cx="8.7" cy="8.4" r="1.25" />
+                  <circle cx="15.3" cy="8.4" r="1.25" />
+                  <circle cx="12" cy="14.5" r="1.25" />
+                </svg>
+              </span>
+              <span class="brand-copy"><span class="title">GraphRAG</span><span class="caption">Admin Console</span></span>
+            </div>
+            <div class="nav-row"><span class="mini-icon"></span><span class="nav-copy"><strong>图谱管理</strong><span>Projects, files, builds</span></span></div>
+          </div>
+          <div class="swatches">
+            <span class="swatch" style="background:#2563eb"></span>
+            <span class="swatch" style="background:#0f766e"></span>
+            <span class="swatch" style="background:#d97706"></span>
+          </div>
+        </article>
+
+        <article class="option recommended">
+          <h2>B. 清爽蓝绿青</h2>
+          <p>推荐。去掉橙色，用蓝、青、深绿形成科技感，和当前浅色控制台更干净。</p>
+          <div class="preview">
+            <div class="brand">
+              <span class="logo palette-calm">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path class="layer" d="M5 8.3 12 4.7l7 3.6-7 3.6-7-3.6Z" />
+                  <path class="layer" d="M5 12.3 12 15.9l7-3.6" />
+                  <path class="layer" d="M5 16.1 12 19.7l7-3.6" />
+                  <path d="M8.7 8.4h6.6M9.6 14.2l4.8-5.2M14.4 14.2 9.6 9" />
+                  <circle cx="8.7" cy="8.4" r="1.25" />
+                  <circle cx="15.3" cy="8.4" r="1.25" />
+                  <circle cx="12" cy="14.5" r="1.25" />
+                </svg>
+              </span>
+              <span class="brand-copy"><span class="title">GraphRAG</span><span class="caption">Admin Console</span></span>
+            </div>
+            <div class="nav-row"><span class="mini-icon"></span><span class="nav-copy"><strong>图谱管理</strong><span>Projects, files, builds</span></span></div>
+          </div>
+          <div class="swatches">
+            <span class="swatch" style="background:#2563eb"></span>
+            <span class="swatch" style="background:#0891b2"></span>
+            <span class="swatch" style="background:#0f766e"></span>
+          </div>
+        </article>
+
+        <article class="option">
+          <h2>C. 深蓝青灰</h2>
+          <p>更稳重。适合企业后台，但图标会稍暗，和左侧白底的活力感弱一些。</p>
+          <div class="preview">
+            <div class="brand">
+              <span class="logo palette-slate">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path class="layer" d="M5 8.3 12 4.7l7 3.6-7 3.6-7-3.6Z" />
+                  <path class="layer" d="M5 12.3 12 15.9l7-3.6" />
+                  <path class="layer" d="M5 16.1 12 19.7l7-3.6" />
+                  <path d="M8.7 8.4h6.6M9.6 14.2l4.8-5.2M14.4 14.2 9.6 9" />
+                  <circle cx="8.7" cy="8.4" r="1.25" />
+                  <circle cx="15.3" cy="8.4" r="1.25" />
+                  <circle cx="12" cy="14.5" r="1.25" />
+                </svg>
+              </span>
+              <span class="brand-copy"><span class="title">GraphRAG</span><span class="caption">Admin Console</span></span>
+            </div>
+            <div class="nav-row"><span class="mini-icon"></span><span class="nav-copy"><strong>图谱管理</strong><span>Projects, files, builds</span></span></div>
+          </div>
+          <div class="swatches">
+            <span class="swatch" style="background:#1e40af"></span>
+            <span class="swatch" style="background:#0e7490"></span>
+            <span class="swatch" style="background:#334155"></span>
+          </div>
+        </article>
+
+        <article class="option">
+          <h2>D. 明亮青绿</h2>
+          <p>更年轻、更轻快。视觉更亮，但可能比后台产品需要的气质稍活泼。</p>
+          <div class="preview">
+            <div class="brand">
+              <span class="logo palette-fresh">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path class="layer" d="M5 8.3 12 4.7l7 3.6-7 3.6-7-3.6Z" />
+                  <path class="layer" d="M5 12.3 12 15.9l7-3.6" />
+                  <path class="layer" d="M5 16.1 12 19.7l7-3.6" />
+                  <path d="M8.7 8.4h6.6M9.6 14.2l4.8-5.2M14.4 14.2 9.6 9" />
+                  <circle cx="8.7" cy="8.4" r="1.25" />
+                  <circle cx="15.3" cy="8.4" r="1.25" />
+                  <circle cx="12" cy="14.5" r="1.25" />
+                </svg>
+              </span>
+              <span class="brand-copy"><span class="title">GraphRAG</span><span class="caption">Admin Console</span></span>
+            </div>
+            <div class="nav-row"><span class="mini-icon"></span><span class="nav-copy"><strong>图谱管理</strong><span>Projects, files, builds</span></span></div>
+          </div>
+          <div class="swatches">
+            <span class="swatch" style="background:#0ea5e9"></span>
+            <span class="swatch" style="background:#14b8a6"></span>
+            <span class="swatch" style="background:#22c55e"></span>
+          </div>
+        </article>
+      </section>
+    </main>
+  </body>
+</html>

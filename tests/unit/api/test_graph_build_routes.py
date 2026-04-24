@@ -1,6 +1,7 @@
 # Copyright (c) 2024 Microsoft Corporation.
 # Licensed under the MIT License
 
+import logging
 from pathlib import Path
 
 import pytest
@@ -28,6 +29,8 @@ class FakeGraphRagWrapperService:
     def __init__(self):
         self.build_calls: list[tuple[str, str, str, bool]] = []
         self.delete_calls: list[str] = []
+        self.cancel_calls: list[str] = []
+        self.closed_roots: list[Path] = []
 
     def start_build(
         self,
@@ -91,6 +94,21 @@ class FakeGraphRagWrapperService:
             status=graph.status,
             deleted_paths=["output", "cache", "logs"],
         )
+
+    async def cancel_active_build(self, graph_id: str) -> bool:
+        self.cancel_calls.append(graph_id)
+        return False
+
+    def close_project_log_handlers(self, root_dir: Path) -> None:
+        self.closed_roots.append(root_dir)
+        logger = logging.getLogger("graphrag")
+        for handler in list(logger.handlers):
+            if not isinstance(handler, logging.FileHandler):
+                continue
+            handler_path = Path(handler.baseFilename).resolve()
+            if handler_path.is_relative_to(root_dir.resolve()):
+                logger.removeHandler(handler)
+                handler.close()
 
 
 @pytest.fixture
@@ -343,6 +361,49 @@ def test_delete_graph_artifacts_returns_deleted_paths(
         },
     }
     assert fake_wrapper_service.delete_calls == [graph_id]
+
+
+def test_delete_graph_closes_project_log_handlers_before_removing_workspace(
+    build_client: tuple[
+        TestClient,
+        Path,
+        AppConfigService,
+        GraphRegistryService,
+        FakeGraphRagWrapperService,
+    ],
+):
+    client, _, _, graph_registry_service, fake_wrapper_service = build_client
+
+    create_response = client.post(
+        "/api/graph",
+        json={
+            "name": "Delete With Query Log",
+            "description": "delete route log handler test",
+        },
+    )
+    assert create_response.status_code == 201
+    graph_id = create_response.json()["data"]["id"]
+    root_dir = Path(graph_registry_service.get_graph(graph_id).root_dir)
+    log_path = root_dir / "logs" / "query.log"
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+
+    logger = logging.getLogger("graphrag")
+    handler = logging.FileHandler(log_path, encoding="utf-8")
+    logger.addHandler(handler)
+
+    try:
+        delete_response = client.delete(f"/api/graph/{graph_id}")
+
+        assert delete_response.status_code == 200
+        assert fake_wrapper_service.cancel_calls == [graph_id]
+        assert fake_wrapper_service.closed_roots == [root_dir]
+        assert not root_dir.exists()
+        assert handler not in logger.handlers
+        assert handler.stream is None
+    finally:
+        if handler in logger.handlers:
+            logger.removeHandler(handler)
+        handler.close()
 
 
 def test_start_graph_build_rejects_invalid_model_profile_precheck(tmp_path: Path):

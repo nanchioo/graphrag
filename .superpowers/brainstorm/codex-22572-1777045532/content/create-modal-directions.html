@@ -1,0 +1,372 @@
+<style>
+  body {
+    margin: 0;
+    padding: 32px;
+    background: #f7f9fc;
+    color: #172033;
+    font-family: Inter, "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
+    line-height: 1.55;
+  }
+
+  h2 {
+    margin: 0;
+    font-size: 24px;
+    line-height: 1.25;
+  }
+
+  .subtitle {
+    margin: 8px 0 0;
+    color: #5b667a;
+    font-size: 14px;
+  }
+
+  .modal-direction-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+    margin-top: 22px;
+  }
+
+  .modal-direction-card {
+    border: 1px solid #dbe4f0;
+    border-radius: 8px;
+    background: #fff;
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+  }
+
+  .modal-direction-card:hover,
+  .modal-direction-card.selected {
+    border-color: #2563eb;
+    box-shadow: 0 14px 36px rgba(15, 23, 42, 0.12);
+    transform: translateY(-2px);
+  }
+
+  .direction-preview {
+    min-height: 360px;
+    padding: 18px;
+    background: #eef3fa;
+  }
+
+  .mini-modal {
+    width: 100%;
+    min-height: 318px;
+    border: 1px solid #d7e0ee;
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 16px 38px rgba(15, 23, 42, 0.13);
+    overflow: hidden;
+  }
+
+  .mini-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 16px;
+    border-bottom: 1px solid #edf1f7;
+    color: #172033;
+    font-weight: 760;
+  }
+
+  .mini-close {
+    color: #8792a6;
+    font-size: 18px;
+  }
+
+  .mini-modal-body {
+    padding: 16px;
+  }
+
+  .mini-section {
+    margin-bottom: 14px;
+    padding: 14px;
+    border: 1px solid #e2e8f3;
+    border-radius: 8px;
+    background: #f8fafc;
+  }
+
+  .mini-section.clean {
+    padding: 0 0 14px;
+    border: 0;
+    border-bottom: 1px solid #edf1f7;
+    border-radius: 0;
+    background: #fff;
+  }
+
+  .mini-section-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    color: #172033;
+    font-size: 12px;
+    font-weight: 760;
+  }
+
+  .mini-index {
+    width: 20px;
+    height: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: #eaf2ff;
+    color: #2563eb;
+    font-size: 11px;
+  }
+
+  .mini-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .mini-field {
+    min-height: 34px;
+    border: 1px solid #d9e2ef;
+    border-radius: 6px;
+    background: #fff;
+  }
+
+  .mini-field.wide {
+    grid-column: 1 / -1;
+  }
+
+  .mini-field.textarea {
+    height: 58px;
+  }
+
+  .mini-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 12px 16px;
+    border-top: 1px solid #edf1f7;
+    background: #fff;
+  }
+
+  .mini-button {
+    height: 30px;
+    min-width: 58px;
+    border: 1px solid #d9e2ef;
+    border-radius: 6px;
+    background: #fff;
+  }
+
+  .mini-button.primary {
+    border-color: #2563eb;
+    background: #2563eb;
+  }
+
+  .wizard-shell {
+    display: grid;
+    grid-template-columns: 90px 1fr;
+    min-height: 318px;
+    border: 1px solid #d7e0ee;
+    border-radius: 8px;
+    background: #fff;
+    overflow: hidden;
+  }
+
+  .wizard-rail {
+    padding: 16px 10px;
+    border-right: 1px solid #edf1f7;
+    background: #f8fafc;
+  }
+
+  .wizard-step {
+    margin-bottom: 12px;
+    padding: 8px;
+    border-radius: 6px;
+    color: #5b667a;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .wizard-step.active {
+    background: #eaf2ff;
+    color: #2563eb;
+  }
+
+  .drawer-preview {
+    min-height: 318px;
+    display: flex;
+    justify-content: flex-end;
+    background: #dfe6ef;
+  }
+
+  .mini-drawer {
+    width: 82%;
+    min-height: 318px;
+    border-left: 1px solid #d7e0ee;
+    background: #fff;
+    box-shadow: -18px 0 34px rgba(15, 23, 42, 0.12);
+  }
+
+  .direction-body {
+    padding: 16px;
+  }
+
+  .direction-body h3 {
+    margin: 0 0 8px;
+    color: #172033;
+    font-size: 16px;
+  }
+
+  .direction-body p {
+    margin: 0;
+    color: #5b667a;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .direction-tag {
+    display: inline-flex;
+    margin-bottom: 10px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: #eaf2ff;
+    color: #2563eb;
+    font-size: 11px;
+    font-weight: 760;
+  }
+
+  @media (max-width: 980px) {
+    .modal-direction-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<h2>新建图谱弹窗样式方向</h2>
+<p class="subtitle">重点看信息密度、分组方式、滚动体验和操作区。点击一个最接近你想要的方向。</p>
+
+<div class="modal-direction-grid">
+  <div class="modal-direction-card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="direction-preview">
+      <div class="mini-modal">
+        <div class="mini-modal-header">
+          <span>新建图谱</span>
+          <span class="mini-close">x</span>
+        </div>
+        <div class="mini-modal-body">
+          <div class="mini-section clean">
+            <div class="mini-section-title"><span class="mini-index">1</span>基础信息</div>
+            <div class="mini-fields">
+              <div class="mini-field"></div>
+              <div class="mini-field"></div>
+              <div class="mini-field wide textarea"></div>
+              <div class="mini-field wide"></div>
+            </div>
+          </div>
+          <div class="mini-section clean">
+            <div class="mini-section-title"><span class="mini-index">2</span>切片配置</div>
+            <div class="mini-fields">
+              <div class="mini-field"></div>
+              <div class="mini-field"></div>
+              <div class="mini-field"></div>
+              <div class="mini-field"></div>
+            </div>
+          </div>
+        </div>
+        <div class="mini-footer">
+          <div class="mini-button"></div>
+          <div class="mini-button primary"></div>
+        </div>
+      </div>
+    </div>
+    <div class="direction-body">
+      <span class="direction-tag">推荐</span>
+      <h3>A. 保守精修弹窗</h3>
+      <p>保留当前弹窗流程，但去掉大面积灰底卡片，改成更轻的分组、稳定页脚和更紧凑间距。改动小，风险最低。</p>
+    </div>
+  </div>
+
+  <div class="modal-direction-card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="direction-preview">
+      <div class="wizard-shell">
+        <div class="wizard-rail">
+          <div class="wizard-step active">基础信息</div>
+          <div class="wizard-step">切片配置</div>
+          <div class="wizard-step">确认</div>
+        </div>
+        <div class="mini-modal" style="border:0;box-shadow:none;border-radius:0;">
+          <div class="mini-modal-header">
+            <span>新建图谱</span>
+            <span class="mini-close">x</span>
+          </div>
+          <div class="mini-modal-body">
+            <div class="mini-section">
+              <div class="mini-section-title"><span class="mini-index">1</span>基础信息</div>
+              <div class="mini-fields">
+                <div class="mini-field"></div>
+                <div class="mini-field"></div>
+                <div class="mini-field wide textarea"></div>
+                <div class="mini-field wide"></div>
+              </div>
+            </div>
+          </div>
+          <div class="mini-footer">
+            <div class="mini-button"></div>
+            <div class="mini-button primary"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="direction-body">
+      <h3>B. 步骤式向导</h3>
+      <p>把基础信息、切片配置拆成步骤，减少一次看到的字段。更适合未来字段继续增加，但当前开发和交互改动更大。</p>
+    </div>
+  </div>
+
+  <div class="modal-direction-card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="direction-preview">
+      <div class="drawer-preview">
+        <div class="mini-drawer">
+          <div class="mini-modal-header">
+            <span>新建图谱</span>
+            <span class="mini-close">x</span>
+          </div>
+          <div class="mini-modal-body">
+            <div class="mini-section clean">
+              <div class="mini-section-title"><span class="mini-index">1</span>基础信息</div>
+              <div class="mini-fields" style="grid-template-columns:1fr;">
+                <div class="mini-field"></div>
+                <div class="mini-field"></div>
+                <div class="mini-field textarea"></div>
+                <div class="mini-field"></div>
+              </div>
+            </div>
+            <div class="mini-section clean">
+              <div class="mini-section-title"><span class="mini-index">2</span>切片配置</div>
+              <div class="mini-fields" style="grid-template-columns:1fr 1fr;">
+                <div class="mini-field"></div>
+                <div class="mini-field"></div>
+                <div class="mini-field"></div>
+                <div class="mini-field"></div>
+              </div>
+            </div>
+          </div>
+          <div class="mini-footer">
+            <div class="mini-button"></div>
+            <div class="mini-button primary"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="direction-body">
+      <h3>C. 右侧抽屉表单</h3>
+      <p>把创建流程改成右侧抽屉，长表单滚动更自然，也不遮挡列表上下文。视觉更现代，但会改变当前弹窗交互模型。</p>
+    </div>
+  </div>
+</div>
+
+<script>
+  function toggleSelect(target) {
+    document.querySelectorAll(".modal-direction-card").forEach(function (card) {
+      card.classList.remove("selected");
+    });
+    target.classList.add("selected");
+  }
+</script>
