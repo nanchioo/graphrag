@@ -1586,6 +1586,11 @@ select {
   max-width: calc(100vw - 32px);
 }
 
+.graph-create-modal.ant-modal {
+  top: 48px;
+  padding-bottom: 24px;
+}
+
 .analysis-modal .ant-modal-content,
 .graph-create-modal .ant-modal-content {
   border: 1px solid var(--color-border-soft);
@@ -1618,14 +1623,82 @@ select {
   overflow-y: auto;
 }
 
+.graph-create-modal .ant-modal-content {
+  max-height: calc(100vh - 48px);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  z-index: 1;
+  isolation: isolate;
+  background: var(--color-surface) !important;
+}
+
+.graph-create-modal .ant-modal-header {
+  padding: 20px 24px 16px;
+  background: var(--color-surface);
+}
+
+.graph-create-modal .ant-modal-title {
+  font-size: inherit;
+}
+
+.graph-create-modal-title {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-right: 34px;
+}
+
+.graph-create-title-main {
+  color: var(--color-text);
+  font-size: 18px;
+  line-height: 1.25;
+  font-weight: 760;
+}
+
+.graph-create-title-sub {
+  color: var(--color-text-muted);
+  font-size: 13px;
+  line-height: 1.5;
+  font-weight: 500;
+}
+
+.graph-create-modal .ant-modal-close {
+  top: 18px;
+  inset-inline-end: 18px;
+  border-radius: var(--radius-control);
+  color: var(--color-text-faint);
+}
+
+.graph-create-modal .ant-modal-close:hover {
+  background: var(--color-surface-subtle);
+  color: var(--color-text);
+}
+
+.graph-create-modal .ant-modal-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 20px 24px 4px;
+  background: var(--color-surface);
+}
+
+.graph-create-modal .ant-modal-footer {
+  margin-top: 0;
+  padding: 16px 24px 20px;
+  border-top: 1px solid var(--color-border-soft);
+  background: var(--color-surface) !important;
+}
+
 .graph-create-form {
   margin-top: 2px;
+  background: var(--color-surface);
 }
 
 .graph-create-layout {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 0;
+  background: var(--color-surface);
 }
 
 .analysis-form-grid {
@@ -1633,28 +1706,53 @@ select {
 }
 
 .graph-create-section {
-  padding: 18px;
-  border: 1px solid var(--color-border-soft);
-  border-radius: var(--radius-card);
-  background: var(--color-surface-subtle);
+  padding: 0 0 20px;
+  border: 0;
+  border-bottom: 1px solid var(--color-border-soft);
+  border-radius: 0;
+  background: transparent;
+}
+
+.graph-create-section + .graph-create-section {
+  padding-top: 20px;
+}
+
+.graph-create-section:last-child {
+  border-bottom: 0;
 }
 
 .graph-create-section-header {
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
 
 .graph-create-section-kicker {
-  display: inline-block;
-  color: var(--color-warning);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-text);
+  font-size: 14px;
+  font-weight: 760;
+  letter-spacing: 0;
+}
+
+.graph-create-section-index {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
   font-family: "Fira Code", Consolas, monospace;
   font-size: 11px;
   font-weight: 760;
-  letter-spacing: 0;
-  text-transform: uppercase;
 }
 
 .graph-create-section-note.ant-typography {
-  margin: 6px 0 0;
+  max-width: 620px;
+  margin: 6px 0 0 30px;
   font-size: 13px;
 }
 
@@ -1666,7 +1764,7 @@ select {
 }
 
 .graph-create-grid .ant-form-item {
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
 .graph-create-grid .ant-form-item:last-child,
@@ -1680,6 +1778,28 @@ select {
 
 .graph-create-modal .ant-input-number {
   width: 100%;
+}
+
+.graph-create-modal .ant-input,
+.graph-create-modal .ant-input-number,
+.graph-create-modal .ant-select-selector {
+  min-height: 38px;
+  background: #fbfdff !important;
+}
+
+.graph-create-modal textarea.ant-input {
+  min-height: 78px;
+}
+
+.graph-create-modal .ant-input[disabled],
+.graph-create-modal .ant-input-number-disabled {
+  background: #eef2f7 !important;
+}
+
+.graph-create-modal .ant-form-item-extra,
+.graph-create-modal .ant-form-item-explain {
+  margin-top: 4px;
+  color: var(--color-text-faint);
 }
 
 .app-header,
@@ -1947,9 +2067,35 @@ select {
     max-width: calc(100vw - 16px);
   }
 
+  .graph-create-modal.ant-modal {
+    top: 12px;
+    padding-bottom: 12px;
+  }
+
   .graph-create-modal .ant-modal-body,
   .analysis-modal .ant-modal-body {
     padding: 16px;
+  }
+
+  .graph-create-modal .ant-modal-header {
+    padding: 16px 18px 14px;
+  }
+
+  .graph-create-modal .ant-modal-body {
+    padding: 16px 18px 0;
+  }
+
+  .graph-create-modal .ant-modal-footer {
+    padding: 12px 18px 16px;
+  }
+
+  .graph-create-title-main {
+    font-size: 17px;
+  }
+
+  .graph-create-title-sub,
+  .graph-create-section-note.ant-typography {
+    font-size: 12px;
   }
 
   .graph-create-grid {
@@ -1958,6 +2104,14 @@ select {
 
   .graph-create-field-span-full {
     grid-column: auto;
+  }
+
+  .graph-create-section {
+    padding-bottom: 16px;
+  }
+
+  .graph-create-section + .graph-create-section {
+    padding-top: 16px;
   }
 }
 

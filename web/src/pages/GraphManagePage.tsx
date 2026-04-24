@@ -907,7 +907,14 @@ export function GraphManagePage() {
 
       <Modal
         open={createOpen}
-        title="新建图谱"
+        title={
+          <div className="graph-create-modal-title">
+            <span className="graph-create-title-main">新建图谱</span>
+            <span className="graph-create-title-sub">
+              配置基础信息和切片参数，创建后可进入图谱管理工作台。
+            </span>
+          </div>
+        }
         width={920}
         className="graph-create-modal analysis-modal"
         okText="创建"
@@ -938,7 +945,10 @@ export function GraphManagePage() {
           <div className="graph-create-layout analysis-form-grid">
             <section className="graph-create-section">
               <div className="graph-create-section-header">
-                <Typography.Text className="graph-create-section-kicker">基础信息</Typography.Text>
+                <Typography.Text className="graph-create-section-kicker">
+                  <span className="graph-create-section-index">1</span>
+                  <span>基础信息</span>
+                </Typography.Text>
                 <Typography.Paragraph className="muted-text graph-create-section-note">
                   配置图谱名称、描述、绑定模型和保存位置。
                 </Typography.Paragraph>
@@ -978,7 +988,10 @@ export function GraphManagePage() {
 
             <section className="graph-create-section">
               <div className="graph-create-section-header">
-                <Typography.Text className="graph-create-section-kicker">切片配置</Typography.Text>
+                <Typography.Text className="graph-create-section-kicker">
+                  <span className="graph-create-section-index">2</span>
+                  <span>切片配置</span>
+                </Typography.Text>
                 <Typography.Paragraph className="muted-text graph-create-section-note">
                   当前仅支持 tokens 切片方式。
                 </Typography.Paragraph>
