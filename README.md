@@ -61,6 +61,38 @@ Once the backend is running:
 - OpenAPI docs: `http://127.0.0.1:8000/docs` or `http://<your-lan-ip>:8000/docs`
 - Admin console: `http://127.0.0.1:8000/console/` or `http://<your-lan-ip>:8000/console/`
 
+### Connect To Dify External Knowledge
+
+The backend exposes a Dify-compatible external knowledge endpoint at:
+
+```text
+POST /api/dify/retrieval
+```
+
+Dify appends `/retrieval` automatically, so configure the external knowledge API
+endpoint in Dify as:
+
+```text
+http://host.docker.internal:8000/api/dify
+```
+
+Use the GraphRAG graph project id as the Dify external knowledge ID. The endpoint
+requires bearer authentication. Set the key before starting the backend:
+
+```powershell
+$env:DIFY_EXTERNAL_KNOWLEDGE_API_KEY = "dify-graphrag-local"
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+Then configure Dify with:
+
+- External knowledge API endpoint: `http://host.docker.internal:8000/api/dify`
+- API key: the value of `DIFY_EXTERNAL_KNOWLEDGE_API_KEY`
+- External knowledge ID: the GraphRAG `graph_id`
+
+If the environment variable is not set, the local default key is
+`dify-graphrag-local`.
+
 ### Start The Frontend In Dev Mode
 
 ```powershell

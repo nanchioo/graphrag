@@ -16,6 +16,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from api.routers.config import router as config_router
+from api.routers.dify import router as dify_router
 from api.routers.graph import router as graph_router
 from api.routers.query import router as query_router
 from api.schemas.common import ApiResponse, AppInfoPayload, HealthPayload
@@ -148,7 +149,7 @@ def create_app(web_dist_dir: Path | None = None) -> FastAPI:
             data=HealthPayload(status="ok", service=SERVICE_NAME),
         )
 
-    for router in (graph_router, config_router, query_router):
+    for router in (graph_router, config_router, query_router, dify_router):
         app.include_router(router)
 
     _configure_console_routes(app, (web_dist_dir or WEB_DIST_DIR).resolve())

@@ -6,6 +6,7 @@
 from api.paths import APP_SETTINGS_PATH, GRAPH_REGISTRY_PATH, PROJECT_ROOT
 from api.schemas.config import SystemConfigPayload
 from api.services.app_config_service import AppConfigService
+from api.services.dify_retrieval_service import DifyRetrievalService
 from api.services.graph_registry_service import GraphRegistryService
 from api.services.graph_status_service import GraphStatusService
 from api.services.graph_view_service import GraphViewService
@@ -64,3 +65,8 @@ def get_graph_view_service() -> GraphViewService:
 def get_query_service() -> QueryService:
     """Return the graph-backed query service."""
     return QueryService()
+
+
+def get_dify_retrieval_service() -> DifyRetrievalService:
+    """Return the Dify external knowledge adapter service."""
+    return DifyRetrievalService()

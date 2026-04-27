@@ -905,7 +905,7 @@ select {
   display: grid;
   grid-template-columns: minmax(320px, 380px) minmax(0, 1fr);
   gap: 20px;
-  align-items: start;
+  align-items: stretch;
 }
 
 .analysis-query-results,
@@ -916,9 +916,15 @@ select {
   gap: 16px;
 }
 
+.analysis-query-results {
+  height: 100%;
+  min-height: 0;
+}
+
 .analysis-query-panel {
   position: sticky;
   top: 28px;
+  align-self: start;
 }
 
 .analysis-query-panel .ant-card-body {
@@ -1025,8 +1031,17 @@ select {
   background: var(--color-surface);
 }
 
+.query-context-card.ant-card {
+  min-height: 0;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+}
+
 .query-context-card .ant-card-body {
-  max-height: 360px;
+  min-height: 0;
+  flex: 1 1 auto;
+  max-height: none;
   overflow-y: auto;
 }
 
@@ -1860,12 +1875,25 @@ select {
     grid-template-columns: 1fr;
   }
 
+  .analysis-query-results {
+    height: auto;
+  }
+
   .analysis-query-panel {
     position: static;
   }
 
   .query-chat-card .ant-card-body {
     max-height: none;
+  }
+
+  .query-context-card.ant-card {
+    flex: 0 1 auto;
+  }
+
+  .query-context-card .ant-card-body {
+    flex: initial;
+    max-height: 360px;
   }
 
   .model-config-workbench {
